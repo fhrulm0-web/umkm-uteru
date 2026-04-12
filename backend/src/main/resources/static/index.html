@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>POS Backend API</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f7f2;
+      --card: #ffffff;
+      --primary: #1b7a3d;
+      --primary-dark: #13582c;
+      --text: #182018;
+      --muted: #657165;
+      --border: #dbe5d9;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+      background:
+        radial-gradient(circle at top left, #e9f7e8 0, transparent 35%),
+        linear-gradient(180deg, #f8fbf6 0%, var(--bg) 100%);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .card {
+      width: min(760px, 100%);
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      box-shadow: 0 14px 40px rgba(23, 54, 29, 0.10);
+      padding: 28px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: #e7f5eb;
+      color: var(--primary-dark);
+      font-weight: 700;
+      font-size: 14px;
+      margin-bottom: 14px;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: 34px;
+      line-height: 1.1;
+    }
+
+    p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+      margin-top: 24px;
+    }
+
+    .item {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px;
+      background: #fcfefd;
+    }
+
+    .item h2 {
+      margin: 0 0 8px;
+      font-size: 18px;
+    }
+
+    .item p {
+      font-size: 14px;
+      margin-bottom: 14px;
+    }
+
+    a {
+      display: inline-block;
+      color: white;
+      text-decoration: none;
+      background: var(--primary);
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    code {
+      background: #eef3ed;
+      padding: 2px 6px;
+      border-radius: 6px;
+      color: var(--primary-dark);
+    }
+
+    .footer {
+      margin-top: 24px;
+      padding-top: 18px;
+      border-top: 1px solid var(--border);
+      font-size: 14px;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <div class="badge">POS Uteru F&B Backend API Aktif</div>
+    <h1>Backend service berjalan normal di port 8080</h1>
+    <p>
+      Service ini menyediakan REST API untuk master data produk, transaksi, dan log stok.
+      Endpoint yang tersedia dapat dikonsumsi oleh client web, mobile, atau aplikasi lain.
+    </p>
+
+    <section class="grid">
+      <article class="item">
+        <h2>Produk API</h2>
+        <p>Mengambil daftar produk aktif dari endpoint master data.</p>
+        <a href="/api/master/products">Lihat Produk</a>
+      </article>
+
+      <article class="item">
+        <h2>Kategori API</h2>
+        <p>Mengambil kategori yang tersedia di sistem.</p>
+        <a href="/api/master/categories">Lihat Kategori</a>
+      </article>
+
+      <article class="item">
+        <h2>Transaksi API</h2>
+        <p>Contoh akses endpoint transaksi dengan filter rentang tanggal.</p>
+        <a href="/api/pos/transactions?from=2026-01-01&to=2026-12-31">Lihat Transaksi API</a>
+      </article>
+    </section>
+
+    <div class="footer">
+      Database default menggunakan <code>mysql</code>. Backend ini dirancang independen dari implementasi client.
+    </div>
+  </main>
+</body>
+</html>
