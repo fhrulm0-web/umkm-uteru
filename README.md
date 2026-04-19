@@ -1,121 +1,72 @@
-# POS UMKM Backend Service
+# POS UMKM F&B (Full-Stack)
 
-Backend service untuk sistem POS UMKM F&B. Repository ini difokuskan pada REST API, logika bisnis transaksi dan stok, serta integrasi database MySQL.
+Aplikasi *Point of Sales* (POS) modern *full-stack* yang dirancang khusus untuk memenuhi kebutuhan bisnis UMKM Food & Beverage. Solusi ini mencakup antarmuka kasir yang responsif (Frontend) dan sistem manajemen persediaan/transaksi yang andal (Backend API).
 
-## Scope
+## 📌 Fitur Utama
 
-Repository ini berisi:
+Aplikasi ini mendukung operasional harian kedai makanan/minuman dengan fitur lengkap:
+* **Sistem Kasir (POS):** Antarmuka interaktif untuk memproses pesanan, dukungan varian produk, harga kustom, dan penghitungan kembalian.
+* **Manajemen Transaksi:** Rekaman *checkout* dengan berbagai metode pembayaran (Cash, Transfer, QRIS) dan kapabilitas pembatalan transaksi (*void*).
+* **Laporan Penjualan:** Dasbor analitik untuk melihat total pendapatan, jumlah transaksi, rata-rata transaksi, dan menu terlaris berdasarkan rentang waktu.
+* **Sistem Manajemen Stok:** 
+  * Pelacakan *stok harian* (Shift Pagi & Shift Malam).
+  * Pembaruan data *stok master* per produk (dukungan penghitungan satuan kemasan *pack/loose pcs*).
+  * Perhitungan pemakaian otomatis berdasarkan input harian.
 
-- backend Spring Boot
-- integrasi database MySQL
-- seed data awal produk dan kategori
-- script full dump database
-- dokumentasi endpoint backend
+## 🛠️ Teknologi yang Digunakan
 
-Folder `frontend` dapat dipakai sebagai client/prototype integrasi, tetapi inti repository ini ada pada sisi backend.
+Proyek aplikasi terbagi menjadi dua bagian utama: Frontend dan Backend.
 
-## Teknologi
+### Frontend
+Aplikasi klien yang ringan dan sangat cepat, dijalankan secara *client-side*.
+* HTML5 & CSS3 (Desain responsif *mobile-first*)
+* Vanilla JavaScript (Pengelolaan *state* fungsional manual)
+* Vite (Lintasan *build* dan lingkungan pengembangan/HMR)
 
-- Java 25
-- Spring Boot 3
-- Spring Web
-- Spring Data JPA
-- Hibernate
-- MySQL
-- Maven
+### Backend
+REST API yang tangguh untuk memproses data keamanan bisnis.
+* Java 25
+* Spring Boot 3
+* Spring Web & Spring Data JPA (Hibernate)
+* MySQL Database
 
-## Fitur Backend
+## 📂 Struktur Repositori
 
-- master data produk dan kategori
-- checkout transaksi
-- penyimpanan detail transaksi
-- input stok pagi
-- input stok malam
-- update stok master
-- log stok harian
-- riwayat transaksi berdasarkan tanggal
+* `/frontend` - Repositori *source code* aplikasi UI klien.
+* `/backend` - Repositori *source code* untuk REST server Java.
+* `/database` - Skema database mentah, *seeding data*, dan utilitas migrasi.
 
-## Struktur
+## 🚀 Panduan Menjalankan Aplikasi
 
-- [backend](/c:/Users/fahrul/Pictures/projek_uteru/backend)
-- [database/mysql/00_full_posdb_mysql.sql](/c:/Users/fahrul/Pictures/projek_uteru/database/mysql/00_full_posdb_mysql.sql)
-- [docs/backend-api.md](/c:/Users/fahrul/Pictures/projek_uteru/docs/backend-api.md)
+### Prasyarat:
+* Node.js & npm (untuk Frontend)
+* Java JDK 25 (untuk Backend)
+* MySQL Server (berjalan pada port 3306)
 
-## Menjalankan Backend
-
-Prasyarat:
-
-- Java JDK 25
-- MySQL Server aktif
-
-Contoh manual:
-
+### 1. Menjalankan Backend (Server API)
+Jalankan di terminal/PowerShell pertama:
 ```powershell
 $env:JAVA_HOME="C:\Program Files\Java\jdk-25.0.2"
 $env:MYSQL_HOST="localhost"
-$env:MYSQL_PORT="3306"
-$env:MYSQL_DATABASE="posdb"
-$env:MYSQL_USERNAME="root"
-$env:MYSQL_PASSWORD="password_mysql_kamu"
+$env:MYSQL_PASSWORD="<password_mysql_kamu>"
 cd backend
 .\mvnw.cmd spring-boot:run
 ```
+*Atau* gunakan file *helper* bawaan: `.\start-backend.ps1 -MysqlPassword "<password>"`
 
-Atau pakai helper script:
+Servis backend akan berjalan di `http://localhost:8080`.
 
-- [start-backend.ps1](/c:/Users/fahrul/Pictures/projek_uteru/start-backend.ps1)
-- [start-backend.bat](/c:/Users/fahrul/Pictures/projek_uteru/start-backend.bat)
-
-Contoh:
-
+### 2. Menjalankan Frontend (Client Web)
+Buka terminal/PowerShell baru tab kedua:
 ```powershell
-.\start-backend.ps1 -MysqlPassword "password_mysql_kamu"
+cd frontend
+npm install
+npm run dev
 ```
+Aplikasi aplikasi kasir dapat diakses pada *browser* Anda melalui `http://localhost:5173`.
 
-Backend akan aktif di:
+## 📜 Pembaruan Terkini
 
-- `http://localhost:8080`
-
-## Database
-
-Database utama yang dipakai adalah MySQL.
-
-Script yang dipertahankan untuk repo ini:
-
-- [00_full_posdb_mysql.sql](/c:/Users/fahrul/Pictures/projek_uteru/database/mysql/00_full_posdb_mysql.sql)
-
-File tersebut sudah mencakup:
-
-- pembuatan database `posdb`
-- tabel utama
-- relasi foreign key
-- seed kategori dan produk
-- data demo transaksi dan stok
-
-## Endpoint Utama
-
-- `GET /api/master/products`
-- `POST /api/master/products`
-- `GET /api/master/categories`
-- `POST /api/master/categories`
-- `POST /api/pos/checkout`
-- `POST /api/pos/stock/morning`
-- `POST /api/pos/stock/night`
-- `POST /api/pos/stock/master`
-- `GET /api/pos/transactions?from=YYYY-MM-DD&to=YYYY-MM-DD`
-- `GET /api/pos/stock/logs?date=YYYY-MM-DD`
-- `DELETE /api/pos/transactions/{id}`
-
-Endpoint hapus transaksi mengembalikan `204 No Content` saat berhasil.
-
-## Catatan
-
-- konfigurasi backend sekarang MySQL-only
-- H2 sudah dihapus agar repo lebih bersih
-- file SQL modular dihapus karena isinya sudah tercakup di full dump `00_full_posdb_mysql.sql`
-
-## Pembaruan Terkini
-
-- **Perbaikan Isu Serialization Tanggal (Jackson):** Menambahkan `spring.jackson.serialization.write-dates-as-timestamps=false` agar `LocalDateTime` tidak dikirim sebagai array integer ke frontend, yang sebelumnya menyebabkan filter laporan harian gagal. Frontend juga dimodifikasi dengan `normalizeDate()` untuk selalu mem-parsing format date array jika ditemui.
-- **Perbaikan LazyInitializationException pada Laporan Transaksi & Stok:** Menambahkan `@Transactional(readOnly=true)` di sisi `PosService` (`getTransactionsByDateRange` & `getStockLogsByDate`) dan memperluas anotasi `@EntityGraph` di level Repositori guna mencegah kegagalan *fetch* detail barang dan kategori karena `open-in-view=false`.
-- **Perbaikan Cache Frontend:** Memperbaiki bug di `main.js` di mana *cache flag* `hasTransactionHistoryLoaded` menyebabkan data transaksi pos/laporan tidak disegarkan (tidak *fetch* ke backend) dengan benar di antara pergantian *page* atau ketika inisiasi *render* awal.
+* **Integrasi Database Backend:** Menghapus sepenuhnya *mock cache* internal untuk *deployment production*, secara penuh mentransisikan penyimpanan state ke tabel MariaDB/MySQL Backend H2 yang sinkron.
+* **Perbaikan Isu Serialization Tanggal (Jackson):** Menambahkan `write-dates-as-timestamps=false` agar pengiriman `LocalDateTime` antar frontend dan backend tervalidasi ISO format yang akurat saat *query* filter.
+* **Penyempurnaan Lazy Initialization JPA:** Menangani transaksi berlapis relasi dengan Hibernate agar data JSON di endpoint API terekstrak sepenuhnya dengan penggunaan `@Transactional` serta pelebaran `@EntityGraph`.
