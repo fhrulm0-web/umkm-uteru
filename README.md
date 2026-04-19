@@ -111,5 +111,4 @@ Endpoint hapus transaksi mengembalikan `204 No Content` saat berhasil.
 ## Catatan
 
 - konfigurasi backend sekarang MySQL-only
-- H2 sudah dihapus agar repo lebih bersih
-- file SQL modular dihapus karena isinya sudah tercakup di full dump `00_full_posdb_mysql.sql`
+
