@@ -6,6 +6,7 @@ import com.uteru.pos.models.Product;
 import com.uteru.pos.payload.MasterStockRequest;
 import com.uteru.pos.payload.StockInputRequest;
 import com.uteru.pos.services.PosService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -58,7 +59,8 @@ public class PosController {
     }
 
     @DeleteMapping("/transactions/{id}")
-    public void deleteTransaction(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteTransaction(@PathVariable Long id) {
         posService.deleteTransaction(id);
+        return ResponseEntity.noContent().build();
     }
 }

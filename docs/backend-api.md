@@ -82,6 +82,12 @@ Mengambil transaksi berdasarkan rentang tanggal.
 
 Menghapus satu transaksi berdasarkan id.
 
+Response sukses:
+
+```text
+204 No Content
+```
+
 ## Stok
 
 ### `POST /api/pos/stock/morning`
