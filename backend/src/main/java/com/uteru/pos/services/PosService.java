@@ -109,10 +109,12 @@ public class PosService {
         return productRepository.save(product);
     }
 
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public List<Transaction> getTransactionsByDateRange(LocalDateTime start, LocalDateTime end) {
         return transactionRepository.findByTransactionDateBetweenOrderByTransactionDateDesc(start, end);
     }
 
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public List<StockLog> getStockLogsByDate(LocalDate date) {
         return stockLogRepository.findByLogDate(date);
     }

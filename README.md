@@ -111,4 +111,11 @@ Endpoint hapus transaksi mengembalikan `204 No Content` saat berhasil.
 ## Catatan
 
 - konfigurasi backend sekarang MySQL-only
+- H2 sudah dihapus agar repo lebih bersih
+- file SQL modular dihapus karena isinya sudah tercakup di full dump `00_full_posdb_mysql.sql`
 
+## Pembaruan Terkini
+
+- **Perbaikan Isu Serialization Tanggal (Jackson):** Menambahkan `spring.jackson.serialization.write-dates-as-timestamps=false` agar `LocalDateTime` tidak dikirim sebagai array integer ke frontend, yang sebelumnya menyebabkan filter laporan harian gagal. Frontend juga dimodifikasi dengan `normalizeDate()` untuk selalu mem-parsing format date array jika ditemui.
+- **Perbaikan LazyInitializationException pada Laporan Transaksi & Stok:** Menambahkan `@Transactional(readOnly=true)` di sisi `PosService` (`getTransactionsByDateRange` & `getStockLogsByDate`) dan memperluas anotasi `@EntityGraph` di level Repositori guna mencegah kegagalan *fetch* detail barang dan kategori karena `open-in-view=false`.
+- **Perbaikan Cache Frontend:** Memperbaiki bug di `main.js` di mana *cache flag* `hasTransactionHistoryLoaded` menyebabkan data transaksi pos/laporan tidak disegarkan (tidak *fetch* ke backend) dengan benar di antara pergantian *page* atau ketika inisiasi *render* awal.

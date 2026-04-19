@@ -30,6 +30,8 @@ var STOCK_LOGS = [];
 var isAppReady = false;
 var isSyncing = false;
 var syncMessage = 'Sinkronisasi data...';
+var syncErrorMessage = '';
+var hasTransactionHistoryLoaded = false;
 
 var CATEGORIES = ['Semua', 'Minuman', 'Makanan'];
 var CAT_ICONS = { 'Semua': '🏷️', 'Minuman': '🥤', 'Makanan': '🍡' };
@@ -113,11 +115,24 @@ function normalizeProduct(product) {
   };
 }
 
+function normalizeDate(d) {
+  // Jackson may return LocalDateTime as ISO string or as array [year, month, day, hour, minute, second, nano]
+  if (!d) return new Date().toISOString();
+  if (typeof d === 'string') return d;
+  if (Array.isArray(d)) {
+    // d = [year, month, day, hour, minute, second, nano?]
+    var year = d[0], month = d[1], day = d[2], hour = d[3] || 0, min = d[4] || 0, sec = d[5] || 0;
+    return year + '-' + String(month).padStart(2, '0') + '-' + String(day).padStart(2, '0') +
+      'T' + String(hour).padStart(2, '0') + ':' + String(min).padStart(2, '0') + ':' + String(sec).padStart(2, '0');
+  }
+  return String(d);
+}
+
 function normalizeTransaction(tx) {
   return {
     dbId: tx.id,
     id: tx.transactionCode || ('TX-' + tx.id),
-    date: tx.transactionDate,
+    date: normalizeDate(tx.transactionDate),
     method: tx.paymentMethod,
     total: Number(tx.totalAmount || 0),
     items: (tx.details || []).map(function (detail) {
@@ -202,6 +217,7 @@ async function loadTransactionsFromServer(from, to) {
   POS_HISTORY = data.map(normalizeTransaction).sort(function (a, b) {
     return new Date(b.date) - new Date(a.date);
   });
+  hasTransactionHistoryLoaded = true;
 }
 
 async function loadStockLogsFromServer(date) {
@@ -220,6 +236,13 @@ function getReportRange() {
   return { from: formatDateOnly(new Date(now.getFullYear(), now.getMonth(), 1)), to: formatDateOnly(now) };
 }
 
+function getRecentHistoryRange() {
+  var now = new Date();
+  var start = new Date(now);
+  start.setDate(now.getDate() - 30);
+  return { from: formatDateOnly(start), to: formatDateOnly(now) };
+}
+
 async function refreshCurrentPageData() {
   if (currentPage === 'report') {
     var range = getReportRange();
@@ -236,6 +259,9 @@ async function refreshCurrentPageData() {
   }
 
   await loadProductsFromServer();
+  // Always load transactions fresh from server to avoid stale data
+  var recentRange = getRecentHistoryRange();
+  await loadTransactionsFromServer(recentRange.from, recentRange.to);
 }
 
 async function syncPageData(message) {
@@ -243,9 +269,11 @@ async function syncPageData(message) {
   render();
   try {
     await refreshCurrentPageData();
+    syncErrorMessage = '';
     isAppReady = true;
   } catch (err) {
     if (!isAppReady) isAppReady = true;
+    syncErrorMessage = 'Gagal memuat data dari backend. Pastikan backend dan database aktif.';
     console.error(err);
   } finally {
     setSyncing(false);
@@ -335,6 +363,8 @@ function loginAs(id) {
   for (var i = 0; i < profiles.length; i++) { if (profiles[i].id === id) { currentUser = profiles[i]; break; } }
   localStorage.setItem('pos_current_user', JSON.stringify(currentUser));
   currentPage = 'pos';
+  hasTransactionHistoryLoaded = false;
+  setSyncing(true, 'Menyambungkan akun ke database...');
   render();
   syncPageData('Menyambungkan akun ke database...');
 }
@@ -386,7 +416,7 @@ function getFilteredProducts() {
 function render() {
   if (!currentUser) { showLoginScreen(); return; }
   var app = document.getElementById('app');
-  if (!isAppReady && isSyncing) { app.innerHTML = renderLoadingState(); return; }
+  if (isSyncing) { app.innerHTML = renderLoadingState() + (isAppReady ? renderBottomNav() : ''); return; }
   if (currentPage === 'pos') app.innerHTML = renderPOS() + renderBottomNav();
   else if (currentPage === 'stock') app.innerHTML = (isOwner() ? renderOwnerStockPage() : renderStaffStockPage()) + renderBottomNav();
   else if (currentPage === 'report') app.innerHTML = renderReportPage() + renderBottomNav();
@@ -456,7 +486,14 @@ function addVariantToCart(id) {
 // ===== ACTIONS =====
 function setCategory(c) { currentCategory = c; render(); }
 function handleSearch(v) { searchQuery = v; updateProductGrid(); }
-function navigate(p) { currentPage = p; render(); syncPageData('Memuat data terbaru...'); }
+function navigate(p) {
+  currentPage = p;
+  hasTransactionHistoryLoaded = false;
+  // Show loading state while fetching fresh data from server
+  setSyncing(true, 'Memuat data terbaru...');
+  render();
+  syncPageData('Memuat data terbaru...');
+}
 function addToCart(id) {
   var p = findProduct(id); if (!p || p.isCustomPrice || p.hasVariant) return;
   var ex = null; for (var j = 0; j < cart.length; j++) { if (cart[j].id === id && !cart[j].cartKey) { ex = cart[j]; break; } }
@@ -808,8 +845,14 @@ function renderReportPage() {
 
   // Transaction list
   var lh = '';
-  if (!filtered.length) lh = '<div class="empty-state"><div class="empty-icon">📋</div><p>Belum ada transaksi ' + (reportTab === 'daily' ? 'pada tanggal ini' : '') + '</p></div>';
-  else {
+  if (!filtered.length) {
+    var emptyMessage = syncErrorMessage || ('Belum ada transaksi ' + (reportTab === 'daily' ? 'pada tanggal ini' : 'di rentang ini'));
+    var emptyHint = '';
+    if (!syncErrorMessage && reportTab === 'daily') {
+      emptyHint = '<p style="font-size:0.78rem;color:var(--text-muted)">Coba ubah tanggal atau buka tab Mingguan/Bulanan untuk melihat riwayat lama.</p>';
+    }
+    lh = '<div class="empty-state"><div class="empty-icon">📋</div><p>' + emptyMessage + '</p>' + emptyHint + '</div>';
+  } else {
     for (var r = 0; r < filtered.length; r++) {
       var h = filtered[r], di = new Date(h.date);
       var time = di.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
