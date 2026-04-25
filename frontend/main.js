@@ -5,26 +5,25 @@ var API_BASE = (function () {
 })();
 var VARIANTS = ['Gula Putih', 'Aren', 'Sirup'];
 
-var DEFAULT_PRODUCTS = [
-  { id: 1, name: 'Es Kelapa Plastik', image: '/images/es-kelapa-plastik.jpg', desc: 'Pilih varian', price: 6000, category: 'Minuman', icon: '🥥', hasVariant: true },
-  { id: 2, name: 'Es Kelapa Cup Kecil', image: '/images/es-kelapa-cup-kecil.jpg', desc: 'Pilih varian', price: 6000, category: 'Minuman', icon: '🥤', hasVariant: true },
-  { id: 3, name: 'Es Kelapa Cup Besar', image: '/images/es-kelapa-cup-besar.jpg', desc: 'Pilih varian', price: 10000, category: 'Minuman', icon: '🥤', hasVariant: true },
-  { id: 4, name: 'Es Jeruk Cup Besar', image: '/images/es-jeruk-cup-besar.jpg', desc: 'Segar dingin', price: 10000, category: 'Minuman', icon: '🍊' },
-  { id: 5, name: 'Es Jeruk Cup Kecil', image: '/images/es-jeruk-cup-kecil.jpg', desc: 'Segar dingin', price: 5000, category: 'Minuman', icon: '🍊' },
-  { id: 6, name: 'Es Teh Cup Besar', image: '/images/es-teh-cup-besar.jpg', desc: 'Teh manis dingin', price: 5000, category: 'Minuman', icon: '🍵' },
-  { id: 7, name: 'Es Teh Cup Kecil', image: '/images/es-teh-cup-kecil.jpg', desc: 'Teh manis dingin', price: 3000, category: 'Minuman', icon: '🍵' },
-  { id: 21, name: 'Pentol Kuah', image: '/images/pentol-kuah.jpg', desc: 'Staff input harga', price: 0, category: 'Makanan', icon: '🍢', isCustomPrice: true, packName: 'Plastik', pcsPerPack: 60, trackStock: true },
-  { id: 22, name: 'Pentol', image: '/images/pentol.jpg', desc: 'Staff input harga', price: 0, category: 'Makanan', icon: '🍡', isCustomPrice: true, packName: 'Plastik', pcsPerPack: 60, trackStock: true },
-  { id: 23, name: 'Pentol Goreng', image: '/images/pentol-goreng.jpg', desc: 'Staff input harga', price: 0, category: 'Makanan', icon: '🍡', isCustomPrice: true, packName: 'Plastik', pcsPerPack: 20, trackStock: true },
-  { id: 24, name: 'Pentol Telur', image: '/images/pentol-telur.jpg', desc: 'Staff input harga', price: 0, category: 'Makanan', icon: '🥚', isCustomPrice: true, packName: 'Plastik', pcsPerPack: 40, trackStock: true },
-  { id: 25, name: 'Sempol', image: '/images/sempol.jpg', desc: 'Staff input harga', price: 0, category: 'Makanan', icon: '🍢', isCustomPrice: true, packName: 'Plastik', pcsPerPack: 30, trackStock: true },
-  { id: 26, name: 'Tahu Isi', image: '/images/tahu-isi.jpg', desc: 'Staff input harga', price: 0, category: 'Makanan', icon: '🧆', isCustomPrice: true, packName: 'Plastik', pcsPerPack: 25, trackStock: true },
-  { id: 27, name: 'Siomay', image: '/images/siomay.jpg', desc: 'Staff input harga', price: 0, category: 'Makanan', icon: '🥟', isCustomPrice: true, packName: 'Plastik', pcsPerPack: 16, trackStock: true },
-  { id: 28, name: 'Pentol Besar', image: '/images/pentol-besar.jpg', desc: 'Staff input harga', price: 0, category: 'Makanan', icon: '🍡', isCustomPrice: true, packName: 'Plastik', pcsPerPack: 8, trackStock: true },
-  { id: 30, name: 'Kelapa Bijian', image: '/images/kelapa-bijian.jpg', desc: 'Harga custom', price: 0, category: 'Minuman', icon: '🥥', isCustomPrice: true },
-
-];
-var PRODUCTS = DEFAULT_PRODUCTS.slice();
+var PRODUCT_UI = {
+  1: { image: '/images/es-kelapa-plastik.jpg', icon: '\uD83E\uDD65', hasVariant: true },
+  2: { image: '/images/es-kelapa-cup-kecil.jpg', icon: '\uD83E\uDD64', hasVariant: true },
+  3: { image: '/images/es-kelapa-cup-besar.jpg', icon: '\uD83E\uDD64', hasVariant: true },
+  4: { image: '/images/es-jeruk-cup-besar.jpg', icon: '\uD83C\uDF4A' },
+  5: { image: '/images/es-jeruk-cup-kecil.jpg', icon: '\uD83C\uDF4A' },
+  6: { image: '/images/es-teh-cup-besar.jpg', icon: '\uD83C\uDF75' },
+  7: { image: '/images/es-teh-cup-kecil.jpg', icon: '\uD83C\uDF75' },
+  21: { image: '/images/pentol-kuah.jpg', icon: '\uD83C\uDF62' },
+  22: { image: '/images/pentol.jpg', icon: '\uD83C\uDF61' },
+  23: { image: '/images/pentol-goreng.jpg', icon: '\uD83C\uDF61' },
+  24: { image: '/images/pentol-telur.jpg', icon: '\uD83E\uDD5A' },
+  25: { image: '/images/sempol.jpg', icon: '\uD83C\uDF62' },
+  26: { image: '/images/tahu-isi.jpg', icon: '\uD83E\uDDC6' },
+  27: { image: '/images/siomay.jpg', icon: '\uD83E\uDD5F' },
+  28: { image: '/images/pentol-besar.jpg', icon: '\uD83C\uDF61' },
+  30: { image: '/images/kelapa-bijian.jpg', icon: '\uD83E\uDD65' }
+};
+var PRODUCTS = [];
 var POS_HISTORY = [];
 var STOCK_LOGS = [];
 var isAppReady = false;
@@ -33,11 +32,22 @@ var syncMessage = 'Sinkronisasi data...';
 var syncErrorMessage = '';
 var hasTransactionHistoryLoaded = false;
 
-var CATEGORIES = ['Semua', 'Minuman', 'Makanan'];
-var CAT_ICONS = { 'Semua': '🏷️', 'Minuman': '🥤', 'Makanan': '🍡' };
+var CAT_ICONS = { 'Semua': '\uD83C\uDFF7\uFE0F', 'Minuman': '\uD83E\uDD64', 'Makanan': '\uD83C\uDF61' };
 function getStockProducts() { return PRODUCTS.filter(function (p) { return p.trackStock; }); }
 function findProduct(id) { for (var i = 0; i < PRODUCTS.length; i++) { if (PRODUCTS[i].id === id) return PRODUCTS[i]; } return null; }
-function findDefaultProduct(id) { for (var i = 0; i < DEFAULT_PRODUCTS.length; i++) { if (DEFAULT_PRODUCTS[i].id === id) return DEFAULT_PRODUCTS[i]; } return null; }
+function getProductUi(id) { return PRODUCT_UI[id] || {}; }
+function getCategoryTabs() {
+  var tabs = ['Semua'];
+  var seen = { 'Semua': true };
+  for (var i = 0; i < PRODUCTS.length; i++) {
+    var cat = PRODUCTS[i].category || 'Lainnya';
+    if (!seen[cat]) {
+      seen[cat] = true;
+      tabs.push(cat);
+    }
+  }
+  return tabs;
+}
 // ===== STATE & DATA =====
 var cart = [];
 var currentCategory = 'Semua';
@@ -45,6 +55,10 @@ var currentPage = 'pos';
 var searchQuery = '';
 var selectedPayment = 'CASH';
 var currentUser = JSON.parse(localStorage.getItem('pos_current_user') || 'null');
+if (currentUser && currentUser.pin) {
+  currentUser = null;
+  localStorage.removeItem('pos_current_user');
+}
 var reportFilterDate = formatDateOnly(new Date());
 
 function getMasterStock(productId) {
@@ -97,20 +111,20 @@ async function apiFetch(path, options) {
 }
 
 function normalizeProduct(product) {
-  var fallback = findDefaultProduct(product.id) || {};
+  var ui = getProductUi(product.id);
   return {
     id: product.id,
-    name: product.name || fallback.name || '',
-    image: fallback.image || '',
-    desc: product.description || fallback.desc || '',
-    price: Number(product.price || fallback.price || 0),
-    category: (product.category && product.category.name) || fallback.category || 'Lainnya',
-    icon: product.icon || fallback.icon || '',
-    hasVariant: !!fallback.hasVariant,
-    isCustomPrice: product.isCustomPrice != null ? product.isCustomPrice : !!fallback.isCustomPrice,
-    packName: product.packName || fallback.packName || null,
-    pcsPerPack: Number(product.pcsPerPack || fallback.pcsPerPack || 1),
-    trackStock: product.trackStock != null ? product.trackStock : !!fallback.trackStock,
+    name: product.name || '',
+    image: product.image || ui.image || '',
+    desc: product.description || '',
+    price: Number(product.price || 0),
+    category: (product.category && product.category.name) || 'Lainnya',
+    icon: product.icon || ui.icon || '',
+    hasVariant: !!ui.hasVariant,
+    isCustomPrice: product.isCustomPrice === true,
+    packName: product.packName || null,
+    pcsPerPack: Number(product.pcsPerPack || 1),
+    trackStock: product.trackStock === true,
     currentStockPcs: Number(product.currentStockPcs || 0)
   };
 }
@@ -282,85 +296,82 @@ async function syncPageData(message) {
 }
 
 async function bootstrapApp() {
-  await syncPageData('Memuat data produk dari database...');
+  if (currentUser) await syncPageData('Memuat data produk dari database...');
 }
 
 // ===== PROFILES =====
-var DEFAULT_PROFILES = [
-  { id: 'owner', name: 'Owner', role: 'owner', avatar: '👑', pin: 'admin123' },
-  { id: 'staff1', name: 'Bu Rani', role: 'staff', avatar: '👩', pin: '1234' },
-  { id: 'staff2', name: 'Nadya', role: 'staff', avatar: '👧', pin: '1234' },
-];
-function getProfiles() {
-  var saved = JSON.parse(localStorage.getItem('pos_profiles') || 'null');
-  if (!saved) { localStorage.setItem('pos_profiles', JSON.stringify(DEFAULT_PROFILES)); return DEFAULT_PROFILES; }
-
-  var changed = false;
-  if (!saved[0].pin) { saved[0].pin = 'admin123'; changed = true; }
-  if (saved[1] && (!saved[1].pin || saved[1].name === 'Staff 1')) { saved[1].name = 'Bu Rani'; saved[1].avatar = '👩'; saved[1].pin = '1234'; changed = true; }
-  if (saved[2] && (!saved[2].pin || saved[2].name === 'Staff 2')) { saved[2].name = 'Nadya'; saved[2].avatar = '👧'; saved[2].pin = '1234'; changed = true; }
-  if (changed) localStorage.setItem('pos_profiles', JSON.stringify(saved));
-  return saved;
-}
 function isOwner() { return currentUser && currentUser.role === 'owner'; }
+function getUserAvatar(user) { return (user && user.avatar) || (user && user.role === 'owner' ? 'O' : 'S'); }
+function getUserDisplayName(user) { return (user && (user.name || user.username)) || 'Kasir'; }
+function getCategoryIcon(category) { return CAT_ICONS[category] || CAT_ICONS.Semua; }
 
 function showLoginScreen() {
-  var profiles = getProfiles();
-  var cards = '';
-  for (var i = 0; i < profiles.length; i++) {
-    var p = profiles[i];
-    cards += '<div class="login-card" onclick="promptLogin(\'' + p.id + '\')">' +
-      '<div class="login-avatar">' + p.avatar + '</div>' +
-      '<div class="login-name">' + p.name + '</div>' +
-      '<div class="login-role">' + (p.role === 'owner' ? 'Owner' : 'Staff') + '</div></div>';
-  }
+  document.body.classList.add('is-login');
   document.getElementById('app').innerHTML = '<div class="login-page">' +
-    '<div class="login-header"><div class="login-logo">🏪</div><h1>POS Uteru F&B</h1><p>Pilih akun untuk masuk</p></div>' +
-    '<div class="login-grid">' + cards + '</div></div>';
-}
-
-function promptLogin(id) {
-  var profiles = getProfiles();
-  var p = null;
-  for (var i = 0; i < profiles.length; i++) { if (profiles[i].id === id) p = profiles[i]; }
-  if (!p) return;
-
-  var o = document.createElement('div'); o.className = 'modal-overlay'; o.id = 'login-pin-modal';
-  o.onclick = function (e) { if (e.target === o) closeModal('login-pin-modal') };
-  var defPin = p.role === 'owner' ? 'admin123' : '1234';
-
-  o.innerHTML = '<div class="modal-sheet"><div class="handle"></div>' +
-    '<div style="text-align:center;font-size:3rem;margin-bottom:8px">' + p.avatar + '</div>' +
-    '<h2 style="margin-top:0">Masuk sebagai ' + p.name + '</h2>' +
-    '<p style="text-align:center;font-size:0.8rem;color:var(--text-muted);margin-bottom:16px">Password default: ' + defPin + '</p>' +
-    '<div class="form-row"><input type="password" id="login-pin-input" placeholder="••••••••" style="text-align:center;font-size:1.5rem;letter-spacing:6px;padding:12px;" /></div>' +
-    '<div id="login-pin-error" style="color:var(--danger);text-align:center;font-size:0.85rem;display:none;margin-top:-8px;margin-bottom:16px">❌ Password salah!</div>' +
-    '<div class="btn-row"><button class="btn btn-outline" onclick="closeModal(\'login-pin-modal\')">Kembali</button>' +
-    '<button class="btn btn-primary" onclick="verifyPin(\'' + id + '\', \'' + p.pin + '\')">🔓 Login</button></div></div>';
-  document.body.appendChild(o);
+    '<div class="login-title-outside">Login</div>' +
+    '<div class="login-panel">' +
+    '<div class="login-brand">' +
+    '<div class="store-logo" aria-hidden="true"><div class="store-sign">24</div><div class="store-awning"></div><div class="store-building"><span></span><span></span><span></span></div><div class="store-base"></div></div>' +
+    '<h1>POS UTERU F&amp;B</h1></div>' +
+    '<form class="login-form" onsubmit="handleLoginSubmit(); return false;">' +
+    '<div class="login-field"><span class="login-field-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-4.4 0-8 2-8 4.5V20h16v-1.5C20 16 16.4 14 12 14Z"/></svg></span><input id="login-identity" type="text" autocomplete="username" placeholder="Username or Email" oninput="clearLoginError()" /></div>' +
+    '<div class="login-field"><span class="login-field-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M17 9h-1V7a4 4 0 0 0-8 0v2H7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2Zm-7-2a2 2 0 0 1 4 0v2h-4Z"/></svg></span><input id="login-password" type="password" autocomplete="current-password" placeholder="Password" oninput="clearLoginError()" /><button class="login-eye" type="button" onclick="toggleLoginPassword()" aria-label="Show password"><svg viewBox="0 0 24 24"><path d="M12 5c5.3 0 9 5 9 7s-3.7 7-9 7-9-5-9-7 3.7-7 9-7Zm0 2c-3.9 0-6.7 3.3-7 5 .3 1.7 3.1 5 7 5s6.7-3.3 7-5c-.3-1.7-3.1-5-7-5Zm0 2.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5Z"/></svg></button></div>' +
+    '<div id="login-error" class="login-error" role="alert"></div>' +
+    '<button class="login-submit" type="submit">Login</button>' +
+    '</form></div></div>';
 
   setTimeout(function () {
-    var pi = document.getElementById('login-pin-input');
-    if (pi) {
-      pi.focus();
-      pi.onkeydown = function (e) { if (e.key === 'Enter') verifyPin(id, p.pin); };
-    }
-  }, 100);
+    var input = document.getElementById('login-identity');
+    if (input) input.focus();
+  }, 50);
 }
 
-function verifyPin(id, correctPin) {
-  var val = document.getElementById('login-pin-input').value;
-  if (val === correctPin) {
-    closeModal('login-pin-modal');
-    loginAs(id);
-  } else {
-    document.getElementById('login-pin-error').style.display = 'block';
+function clearLoginError() {
+  var el = document.getElementById('login-error');
+  if (el) el.textContent = '';
+}
+
+function setLoginError(message) {
+  var el = document.getElementById('login-error');
+  if (el) el.textContent = message;
+}
+
+async function handleLoginSubmit() {
+  var identityEl = document.getElementById('login-identity');
+  var passwordEl = document.getElementById('login-password');
+  var identity = identityEl ? identityEl.value : '';
+  var password = passwordEl ? passwordEl.value : '';
+
+  if (!identity || !password) {
+    setLoginError('Username/email dan password wajib diisi.');
+    return;
+  }
+
+  try {
+    var user = await apiFetch('/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ identity: identity, password: password })
+    });
+    completeLogin(user);
+  } catch (err) {
+    console.error(err);
+    setLoginError('Username/email atau password salah.');
   }
 }
 
-function loginAs(id) {
-  var profiles = getProfiles();
-  for (var i = 0; i < profiles.length; i++) { if (profiles[i].id === id) { currentUser = profiles[i]; break; } }
+function toggleLoginPassword() {
+  var input = document.getElementById('login-password');
+  var button = document.querySelector('.login-eye');
+  if (!input) return;
+  var isHidden = input.type === 'password';
+  input.type = isHidden ? 'text' : 'password';
+  if (button) button.setAttribute('aria-label', isHidden ? 'Hide password' : 'Show password');
+}
+
+function completeLogin(user) {
+  document.body.classList.remove('is-login');
+  currentUser = user;
   localStorage.setItem('pos_current_user', JSON.stringify(currentUser));
   currentPage = 'pos';
   hasTransactionHistoryLoaded = false;
@@ -415,6 +426,7 @@ function getFilteredProducts() {
 // ===== RENDER =====
 function render() {
   if (!currentUser) { showLoginScreen(); return; }
+  document.body.classList.remove('is-login');
   var app = document.getElementById('app');
   if (isSyncing) { app.innerHTML = renderLoadingState() + (isAppReady ? renderBottomNav() : ''); return; }
   if (currentPage === 'pos') app.innerHTML = renderPOS() + renderBottomNav();
@@ -434,17 +446,17 @@ function updateProductGrid() {
 // ===== POS PAGE =====
 function renderPOS() {
   var f = getFilteredProducts(), cl = currentCategory === 'Semua' ? 'SEMUA PRODUK' : currentCategory.toUpperCase();
-  var ct = '';
-  for (var i = 0; i < CATEGORIES.length; i++) {
-    var c = CATEGORIES[i];
+  var ct = '', categories = getCategoryTabs();
+  for (var i = 0; i < categories.length; i++) {
+    var c = categories[i];
     ct += '<button class="cat-tab ' + (currentCategory === c ? 'active' : '') + '" onclick="setCategory(\'' + c + '\')">' +
-      '<span class="tab-icon">' + CAT_ICONS[c] + '</span>' + c + '</button>';
+      '<span class="tab-icon">' + getCategoryIcon(c) + '</span>' + c + '</button>';
   }
   var ph = '';
   if (!f.length) ph = '<div class="empty-state"><div class="empty-icon">🔍</div><p>Produk tidak ditemukan</p></div>';
   else { ph = '<div class="product-grid" id="product-grid">'; for (var j = 0; j < f.length; j++) ph += renderProductCard(f[j]); ph += '</div>'; }
   return '<div class="page-enter"><div class="app-header"><div class="header-left">' +
-    '<div class="header-greeting">Halo, ' + currentUser.name + ' ' + currentUser.avatar + '</div>' +
+    '<div class="header-greeting">Halo, ' + getUserDisplayName(currentUser) + '</div>' +
     '<div class="header-title">POS Uteru F&B</div></div><div class="header-right">' +
     '<button class="icon-btn" onclick="openCartModal()">🛒' + (cartCount() ? '<span class="badge">' + cartCount() + '</span>' : '') + '</button></div></div>' +
     '<div class="search-bar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>' +
@@ -534,8 +546,7 @@ function changeQty(i, d) { cart[i].qty += d; if (cart[i].qty <= 0) cart.splice(i
 async function processCheckout() {
   var total = cartTotal();
   if (!cart.length) return;
-  var pfx = currentUser.id === 'staff1' ? 'Staff 1 ' : (currentUser.id === 'staff2' ? 'Staff 2 ' : 'Staff ');
-  var cName = currentUser.role === 'owner' ? currentUser.name : pfx + '(' + currentUser.name + ')';
+  var cName = currentUser.name || currentUser.username || 'Kasir';
   try {
     var savedTx = await apiFetch('/pos/checkout', {
       method: 'POST',
@@ -902,9 +913,60 @@ function showStockDetail(morning, night, used, pcsPerPack, product) {
 
 // ===== PROFILE =====
 function renderProfilePage() {
-  return '<div class="stock-page page-enter"><div class="app-header"><div><div class="header-greeting">Profil</div><div class="header-title">' + currentUser.avatar + ' ' + currentUser.name + '</div></div></div>' +
-    '<div class="receipt-meta" style="margin:0 20px"><div class="receipt-meta-row"><span>Nama</span><span>' + currentUser.name + '</span></div><div class="receipt-meta-row"><span>Role</span><span class="receipt-badge">' + (isOwner() ? '👑 Owner' : '👤 Staff') + '</span></div></div>' +
+  var ownerTools = isOwner()
+    ? '<div style="padding:20px 20px 0"><button class="btn btn-profile-add btn-block" onclick="openCreateProfileModal()"><span>+</span> Tambah Profile</button></div>'
+    : '';
+  return '<div class="stock-page page-enter profile-page"><div class="app-header"><div><div class="header-greeting">Profil</div><div class="header-title">' + getUserDisplayName(currentUser) + '</div></div></div>' +
+    '<div class="receipt-meta" style="margin:0 20px"><div class="receipt-meta-row"><span>Nama</span><span>' + getUserDisplayName(currentUser) + '</span></div><div class="receipt-meta-row"><span>Role</span><span class="receipt-badge">' + (isOwner() ? '👑 Owner' : '👤 Staff') + '</span></div></div>' +
+    ownerTools +
     '<div style="padding:20px"><button class="btn btn-danger btn-block" onclick="logout()">Logout</button></div></div>';
+}
+
+function openCreateProfileModal() {
+  closeModal('create-profile-modal');
+  var o = document.createElement('div'); o.className = 'modal-overlay'; o.id = 'create-profile-modal';
+  o.onclick = function (e) { if (e.target === o) closeModal('create-profile-modal') };
+  o.innerHTML = '<div class="modal-sheet"><div class="handle"></div><h2>Tambah Profile</h2>' +
+    '<div class="form-row"><label>Nama</label><input id="profile-name" type="text" placeholder="Nama kasir" /></div>' +
+    '<div class="form-row"><label>Username</label><input id="profile-username" type="text" placeholder="staff3" autocomplete="off" /></div>' +
+    '<div class="form-row"><label>Email</label><input id="profile-email" type="email" placeholder="staff3@uteru.local" autocomplete="off" /></div>' +
+    '<div class="form-row"><label>Password</label><input id="profile-password" type="password" placeholder="Password" autocomplete="new-password" /></div>' +
+    '<div class="form-row"><label>Role</label><select id="profile-role"><option value="staff">Staff</option><option value="owner">Owner</option></select></div>' +
+    '<div class="form-row"><label>Avatar</label><input id="profile-avatar" type="text" maxlength="4" placeholder="S" /></div>' +
+    '<div id="profile-create-error" style="color:var(--danger);text-align:center;font-size:0.85rem;display:none;margin-top:-8px;margin-bottom:16px"></div>' +
+    '<div class="btn-row"><button class="btn btn-outline" onclick="closeModal(\'create-profile-modal\')">Batal</button>' +
+    '<button class="btn btn-primary" onclick="createProfile()">Simpan</button></div></div>';
+  document.body.appendChild(o);
+}
+
+async function createProfile() {
+  var name = document.getElementById('profile-name').value.trim();
+  var username = document.getElementById('profile-username').value.trim();
+  var email = document.getElementById('profile-email').value.trim();
+  var password = document.getElementById('profile-password').value;
+  var role = document.getElementById('profile-role').value;
+  var avatar = document.getElementById('profile-avatar').value.trim();
+  var error = document.getElementById('profile-create-error');
+
+  if (!name || !username || !password) {
+    error.textContent = 'Nama, username, dan password wajib diisi.';
+    error.style.display = 'block';
+    return;
+  }
+
+  try {
+    await apiFetch('/auth/profiles', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: name, username: username, email: email, password: password, role: role, avatar: avatar })
+    });
+    closeModal('create-profile-modal');
+    alert('Profile berhasil dibuat.');
+  } catch (e) {
+    console.error(e);
+    error.textContent = 'Profile gagal dibuat. Username/email mungkin sudah dipakai.';
+    error.style.display = 'block';
+  }
 }
 
 // ===== BOTTOM NAV =====
@@ -912,15 +974,16 @@ function renderBottomNav() {
   var n = '<nav class="bottom-nav"><button class="nav-item ' + (currentPage === 'pos' ? 'active' : '') + '" onclick="navigate(\'pos\')"><span class="nav-icon">🏠</span>Kasir</button>';
   n += '<button class="nav-item ' + (currentPage === 'stock' ? 'active' : '') + '" onclick="navigate(\'stock\')"><span class="nav-icon">📦</span>Stok</button>';
   n += '<button class="nav-item ' + (currentPage === 'report' ? 'active' : '') + '" onclick="navigate(\'report\')"><span class="nav-icon">📊</span>Laporan</button>';
-  n += '<button class="nav-item ' + (currentPage === 'profile' ? 'active' : '') + '" onclick="navigate(\'profile\')"><span class="nav-icon">' + currentUser.avatar + '</span>Profil</button></nav>';
+  n += '<button class="nav-item ' + (currentPage === 'profile' ? 'active' : '') + '" onclick="navigate(\'profile\')"><span class="nav-icon">' + getUserAvatar(currentUser) + '</span>Profil</button></nav>';
   return n;
 }
 function closeModal(id) { var el = document.getElementById(id); if (el) el.remove(); }
 
 // ===== INIT =====
 Object.assign(window, {
-  promptLogin: promptLogin,
-  verifyPin: verifyPin,
+  handleLoginSubmit: handleLoginSubmit,
+  clearLoginError: clearLoginError,
+  toggleLoginPassword: toggleLoginPassword,
   closeModal: closeModal,
   formatCurrency: formatCurrency,
   setCategory: setCategory,
@@ -945,6 +1008,8 @@ Object.assign(window, {
   setReportTab: setReportTab,
   setReportDate: setReportDate,
   showStockDetail: showStockDetail,
+  openCreateProfileModal: openCreateProfileModal,
+  createProfile: createProfile,
   logout: logout
 });
 render();

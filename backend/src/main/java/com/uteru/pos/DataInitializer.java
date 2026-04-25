@@ -1,7 +1,7 @@
 package com.uteru.pos;
 
+import com.uteru.pos.security.PasswordUtil;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
@@ -20,7 +20,6 @@ public class DataInitializer implements CommandLineRunner {
     public void run(String... args) {
         upsertCategory(1L, "Minuman");
         upsertCategory(2L, "Makanan");
-        disableLegacyProduct(20L);
 
         upsertProduct(1L, "Es Kelapa Plastik", "Pilih varian gula putih, aren, atau sirup", 1L,
                 6000, false, false, null, 1);
@@ -54,15 +53,14 @@ public class DataInitializer implements CommandLineRunner {
                 0, true, true, "Plastik", 8);
         upsertProduct(30L, "Kelapa Bijian", "Harga custom", 1L,
                 0, false, true, null, 1);
+
+        insertUserIfMissing("owner", "owner@uteru.local", "Owner", "owner", "O", "admin123");
+        insertUserIfMissing("staff1", "staff1@uteru.local", "Bu Rani", "staff", "R", "1234");
+        insertUserIfMissing("staff2", "staff2@uteru.local", "Nadya", "staff", "N", "1234");
     }
 
     private void upsertCategory(Long id, String name) {
-        int updated = jdbcTemplate.update(
-                "UPDATE categories SET name = ? WHERE id = ?",
-                name,
-                id);
-
-        if (updated == 0) {
+        if (!categoryExists(id)) {
             jdbcTemplate.update(
                     "INSERT INTO categories (id, name) VALUES (?, ?)",
                     id,
@@ -79,28 +77,7 @@ public class DataInitializer implements CommandLineRunner {
                                boolean customPrice,
                                String packName,
                                int pcsPerPack) {
-        Integer currentStockPcs = getExistingCurrentStock(id);
-
-        int updated = jdbcTemplate.update("""
-                UPDATE products
-                SET name = ?, description = ?, category_id = ?, price = ?, is_active = ?, is_custom_price = ?,
-                    icon = ?, pack_name = ?, pcs_per_pack = ?, track_stock = ?, current_stock_pcs = ?
-                WHERE id = ?
-                """,
-                name,
-                description,
-                categoryId,
-                BigDecimal.valueOf(price),
-                true,
-                customPrice,
-                null,
-                packName,
-                pcsPerPack,
-                trackStock,
-                currentStockPcs == null ? 0 : currentStockPcs,
-                id);
-
-        if (updated == 0) {
+        if (!productExists(id)) {
             jdbcTemplate.update("""
                     INSERT INTO products (
                         id, name, description, category_id, price, is_active, is_custom_price,
@@ -119,22 +96,48 @@ public class DataInitializer implements CommandLineRunner {
                     packName,
                     pcsPerPack,
                     trackStock,
-                    currentStockPcs == null ? 0 : currentStockPcs);
+                    0);
         }
     }
 
-    private Integer getExistingCurrentStock(Long productId) {
-        try {
-            return jdbcTemplate.queryForObject(
-                    "SELECT current_stock_pcs FROM products WHERE id = ?",
-                    Integer.class,
-                    productId);
-        } catch (EmptyResultDataAccessException ex) {
-            return 0;
+    private void insertUserIfMissing(String username,
+                                     String email,
+                                     String name,
+                                     String role,
+                                     String avatar,
+                                     String password) {
+        if (userExists(username)) {
+            return;
         }
+
+        jdbcTemplate.update("""
+                INSERT INTO pos_users (username, email, name, role, avatar, password_hash, is_active)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                username,
+                email,
+                name,
+                role,
+                avatar,
+                PasswordUtil.hashPassword(password),
+                true);
     }
 
-    private void disableLegacyProduct(Long productId) {
-        jdbcTemplate.update("UPDATE products SET is_active = FALSE WHERE id = ?", productId);
+    private boolean categoryExists(Long id) {
+        Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM categories WHERE id = ?", Integer.class, id);
+        return count != null && count > 0;
+    }
+
+    private boolean productExists(Long id) {
+        Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM products WHERE id = ?", Integer.class, id);
+        return count != null && count > 0;
+    }
+
+    private boolean userExists(String username) {
+        Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM pos_users WHERE LOWER(username) = LOWER(?)",
+                Integer.class,
+                username);
+        return count != null && count > 0;
     }
 }

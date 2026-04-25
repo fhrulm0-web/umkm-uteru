@@ -48,6 +48,44 @@ Contoh body:
 }
 ```
 
+## Login dan Profil
+
+### `POST /api/auth/login`
+
+Login memakai profile yang tersimpan di tabel `pos_users`.
+
+Contoh body:
+
+```json
+{
+  "identity": "owner",
+  "password": "admin123"
+}
+```
+
+`identity` bisa berisi username atau email.
+
+### `GET /api/auth/profiles`
+
+Mengambil daftar profile aktif tanpa password hash.
+
+### `POST /api/auth/profiles`
+
+Membuat profile baru.
+
+Contoh body:
+
+```json
+{
+  "username": "staff3",
+  "email": "staff3@uteru.local",
+  "password": "1234",
+  "name": "Staff Baru",
+  "role": "staff",
+  "avatar": "S"
+}
+```
+
 ## Checkout dan Transaksi
 
 ### `POST /api/pos/checkout`
