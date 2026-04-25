@@ -59,11 +59,12 @@ Contoh body:
 ```json
 {
   "identity": "owner",
-  "password": "admin123"
+  "password": "<password-dari-environment>"
 }
 ```
 
 `identity` bisa berisi username atau email.
+Route `/api/auth/**` dibatasi 5 percobaan per 15 menit secara default.
 
 ### `GET /api/auth/profiles`
 
@@ -79,7 +80,7 @@ Contoh body:
 {
   "username": "staff3",
   "email": "staff3@uteru.local",
-  "password": "1234",
+  "password": "<password-minimal-8-karakter>",
   "name": "Staff Baru",
   "role": "staff",
   "avatar": "S"

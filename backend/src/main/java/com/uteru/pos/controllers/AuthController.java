@@ -4,6 +4,7 @@ import com.uteru.pos.payload.LoginRequest;
 import com.uteru.pos.payload.UserProfileRequest;
 import com.uteru.pos.payload.UserResponse;
 import com.uteru.pos.services.AuthService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,7 +12,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "*")
 public class AuthController {
     private final AuthService authService;
 
@@ -20,7 +20,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public UserResponse login(@RequestBody LoginRequest request) {
+    public UserResponse login(@Valid @RequestBody LoginRequest request) {
         return authService.login(request);
     }
 
@@ -31,7 +31,7 @@ public class AuthController {
 
     @PostMapping("/profiles")
     @ResponseStatus(HttpStatus.CREATED)
-    public UserResponse createProfile(@RequestBody UserProfileRequest request) {
+    public UserResponse createProfile(@Valid @RequestBody UserProfileRequest request) {
         return authService.createProfile(request);
     }
 }

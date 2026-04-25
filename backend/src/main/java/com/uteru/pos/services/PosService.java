@@ -9,9 +9,13 @@ import com.uteru.pos.payload.StockInputRequest;
 import com.uteru.pos.repositories.ProductRepository;
 import com.uteru.pos.repositories.StockLogRepository;
 import com.uteru.pos.repositories.TransactionRepository;
+import com.uteru.pos.validation.InputSanitizer;
 import jakarta.transaction.Transactional;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -34,6 +38,7 @@ public class PosService {
 
     @Transactional
     public Transaction processCheckout(Transaction transaction) {
+        sanitizeAndValidateTransaction(transaction);
         transaction.setTransactionDate(LocalDateTime.now());
         transaction.setTransactionCode(generateTransactionCode());
 
@@ -57,7 +62,7 @@ public class PosService {
         int previousActualUsed = safeInt(log.getActualUsedQty());
 
         log.setMorningStock(pcsQuantity);
-        log.setMorningStaffName(request.getStaffName());
+        log.setMorningStaffName(InputSanitizer.cleanText(request.getStaffName()));
 
         if (log.getNightStock() != null) {
             int newActualUsed = computeActualUsed(pcsQuantity, log.getNightStock());
@@ -74,14 +79,14 @@ public class PosService {
 
         LocalDate today = LocalDate.now();
         StockLog log = stockLogRepository.findByProductIdAndLogDate(product.getId(), today)
-                .orElseThrow(() -> new RuntimeException("No morning stock found for today"));
+                .orElseThrow(() -> badRequest("No morning stock found for today"));
 
         int morningStock = safeInt(log.getMorningStock());
         int previousActualUsed = safeInt(log.getActualUsedQty());
         int newActualUsed = computeActualUsed(morningStock, totalPcsLeft);
 
         log.setNightStock(totalPcsLeft);
-        log.setNightStaffName(request.getStaffName());
+        log.setNightStaffName(InputSanitizer.cleanText(request.getStaffName()));
         applyActualUsageDelta(product, log, previousActualUsed, newActualUsed);
 
         return stockLogRepository.save(log);
@@ -93,8 +98,12 @@ public class PosService {
         Integer setTotalPcs = request.getSetTotalPcs();
 
         if (setTotalPcs != null) {
+            int addPcs = toTotalPcs(product, request.getAddPackQuantity(), request.getAddLoosePcsQuantity());
+            if (addPcs > 0) {
+                throw badRequest("Choose either setTotalPcs or add stock values, not both");
+            }
             if (setTotalPcs < 0) {
-                throw new RuntimeException("Total stock cannot be negative");
+                throw badRequest("Total stock cannot be negative");
             }
             product.setCurrentStockPcs(setTotalPcs);
             return productRepository.save(product);
@@ -102,7 +111,7 @@ public class PosService {
 
         int addPcs = toTotalPcs(product, request.getAddPackQuantity(), request.getAddLoosePcsQuantity());
         if (addPcs <= 0) {
-            throw new RuntimeException("Additional stock must be greater than zero");
+            throw badRequest("Additional stock must be greater than zero");
         }
 
         product.setCurrentStockPcs(safeInt(product.getCurrentStockPcs()) + addPcs);
@@ -122,15 +131,15 @@ public class PosService {
     @Transactional
     public void deleteTransaction(Long transactionId) {
         Transaction transaction = transactionRepository.findById(transactionId)
-                .orElseThrow(() -> new RuntimeException("Transaction not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Transaction not found"));
         transactionRepository.delete(transaction);
     }
 
     private Product getTrackedProduct(Long productId) {
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Product not found"));
         if (!Boolean.TRUE.equals(product.getTrackStock())) {
-            throw new RuntimeException("Product does not support stock tracking");
+            throw badRequest("Product does not support stock tracking");
         }
         return product;
     }
@@ -146,7 +155,7 @@ public class PosService {
         int packs = safeInt(packQuantity);
         int loosePcs = safeInt(loosePcsQuantity);
         if (packs < 0 || loosePcs < 0) {
-            throw new RuntimeException("Stock values cannot be negative");
+            throw badRequest("Stock values cannot be negative");
         }
         return (packs * safeInt(product.getPcsPerPack())) + loosePcs;
     }
@@ -154,7 +163,7 @@ public class PosService {
     private int computeActualUsed(int morningStock, int nightStock) {
         int actualUsed = morningStock - nightStock;
         if (actualUsed < 0) {
-            throw new RuntimeException("Night stock cannot exceed morning stock");
+            throw badRequest("Night stock cannot exceed morning stock");
         }
         return actualUsed;
     }
@@ -163,7 +172,7 @@ public class PosService {
         int delta = newActualUsed - previousActualUsed;
         int currentStock = safeInt(product.getCurrentStockPcs()) - delta;
         if (currentStock < 0) {
-            throw new RuntimeException("Master stock is not enough for this usage");
+            throw badRequest("Master stock is not enough for this usage");
         }
 
         product.setCurrentStockPcs(currentStock);
@@ -177,5 +186,43 @@ public class PosService {
 
     private String generateTransactionCode() {
         return "TX-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+    }
+
+    private void sanitizeAndValidateTransaction(Transaction transaction) {
+        transaction.setId(null);
+        transaction.setCashierName(InputSanitizer.cleanNullableText(transaction.getCashierName()));
+        transaction.setPaymentMethod(InputSanitizer.cleanText(transaction.getPaymentMethod()).toUpperCase());
+
+        if (transaction.getDetails() == null || transaction.getDetails().isEmpty()) {
+            throw badRequest("Transaction must contain at least one item");
+        }
+
+        BigDecimal computedTotal = BigDecimal.ZERO;
+        for (TransactionDetail detail : transaction.getDetails()) {
+            detail.setId(null);
+            detail.setProductName(InputSanitizer.cleanNullableText(detail.getProductName()));
+            if (detail.getProduct() != null && detail.getProduct().getId() != null) {
+                Product product = productRepository.findById(detail.getProduct().getId())
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Product not found"));
+                detail.setProduct(product);
+            } else {
+                detail.setProduct(null);
+            }
+            if (detail.getSubtotal() != null) {
+                computedTotal = computedTotal.add(detail.getSubtotal());
+            }
+        }
+
+        if (transaction.getTotalAmount() == null || computedTotal.compareTo(transaction.getTotalAmount()) != 0) {
+            throw badRequest("Transaction total does not match item subtotal");
+        }
+
+        if (transaction.getAmountPaid() != null && transaction.getAmountPaid().compareTo(transaction.getTotalAmount()) < 0) {
+            throw badRequest("Amount paid cannot be lower than total amount");
+        }
+    }
+
+    private ResponseStatusException badRequest(String message) {
+        return new ResponseStatusException(HttpStatus.BAD_REQUEST, message);
     }
 }

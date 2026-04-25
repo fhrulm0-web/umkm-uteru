@@ -4,7 +4,12 @@ param(
     [string]$MysqlPort = "3306",
     [string]$MysqlDatabase = "posdb",
     [string]$MysqlUsername = "root",
-    [string]$MysqlPassword = ""
+    [string]$MysqlPassword = "",
+    [switch]$AllowEmptyMysqlPassword,
+    [switch]$SeedUsers,
+    [string]$SeedOwnerPassword = "",
+    [string]$SeedStaff1Password = "",
+    [string]$SeedStaff2Password = ""
 )
 
 $projectRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -24,15 +29,33 @@ if (-not $env:JAVA_HOME -or -not (Test-Path $env:JAVA_HOME)) {
     }
 }
 
+if (-not $AllowEmptyMysqlPassword -and [string]::IsNullOrWhiteSpace($MysqlPassword)) {
+    Write-Error "MYSQL_PASSWORD is required. Pass -MysqlPassword or use -AllowEmptyMysqlPassword only for a local throwaway database."
+    exit 1
+}
+
+if ($SeedUsers -and (
+        [string]::IsNullOrWhiteSpace($SeedOwnerPassword) -or
+        [string]::IsNullOrWhiteSpace($SeedStaff1Password) -or
+        [string]::IsNullOrWhiteSpace($SeedStaff2Password))) {
+    Write-Error "Seed user passwords are required when -SeedUsers is enabled."
+    exit 1
+}
+
 $env:MYSQL_HOST = $MysqlHost
 $env:MYSQL_PORT = $MysqlPort
 $env:MYSQL_DATABASE = $MysqlDatabase
 $env:MYSQL_USERNAME = $MysqlUsername
 $env:MYSQL_PASSWORD = $MysqlPassword
+$env:POS_SEED_USERS_ENABLED = $SeedUsers.ToString().ToLowerInvariant()
+$env:POS_SEED_OWNER_PASSWORD = $SeedOwnerPassword
+$env:POS_SEED_STAFF1_PASSWORD = $SeedStaff1Password
+$env:POS_SEED_STAFF2_PASSWORD = $SeedStaff2Password
 
 Write-Host "Menjalankan backend dari $backendDir" -ForegroundColor Green
 Write-Host "JAVA_HOME: $env:JAVA_HOME" -ForegroundColor DarkGray
 Write-Host "MySQL: $env:MYSQL_USERNAME@$env:MYSQL_HOST:$env:MYSQL_PORT/$env:MYSQL_DATABASE" -ForegroundColor DarkGray
+Write-Host "Seed users enabled: $env:POS_SEED_USERS_ENABLED" -ForegroundColor DarkGray
 
 Set-Location $backendDir
 & .\mvnw.cmd spring-boot:run

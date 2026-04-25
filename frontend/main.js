@@ -54,10 +54,11 @@ var currentCategory = 'Semua';
 var currentPage = 'pos';
 var searchQuery = '';
 var selectedPayment = 'CASH';
-var currentUser = JSON.parse(localStorage.getItem('pos_current_user') || 'null');
+var currentUser = JSON.parse(sessionStorage.getItem('pos_current_user') || 'null');
+localStorage.removeItem('pos_current_user');
 if (currentUser && currentUser.pin) {
   currentUser = null;
-  localStorage.removeItem('pos_current_user');
+  sessionStorage.removeItem('pos_current_user');
 }
 var reportFilterDate = formatDateOnly(new Date());
 
@@ -304,6 +305,17 @@ function isOwner() { return currentUser && currentUser.role === 'owner'; }
 function getUserAvatar(user) { return (user && user.avatar) || (user && user.role === 'owner' ? 'O' : 'S'); }
 function getUserDisplayName(user) { return (user && (user.name || user.username)) || 'Kasir'; }
 function getCategoryIcon(category) { return CAT_ICONS[category] || CAT_ICONS.Semua; }
+function escapeHtml(value) {
+  return String(value == null ? '' : value).replace(/[&<>"']/g, function (ch) {
+    return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch];
+  });
+}
+function escapeJsString(value) {
+  return String(value == null ? '' : value)
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/[\r\n]/g, ' ');
+}
 
 function showLoginScreen() {
   document.body.classList.add('is-login');
@@ -372,14 +384,14 @@ function toggleLoginPassword() {
 function completeLogin(user) {
   document.body.classList.remove('is-login');
   currentUser = user;
-  localStorage.setItem('pos_current_user', JSON.stringify(currentUser));
+  sessionStorage.setItem('pos_current_user', JSON.stringify(currentUser));
   currentPage = 'pos';
   hasTransactionHistoryLoaded = false;
   setSyncing(true, 'Menyambungkan akun ke database...');
   render();
   syncPageData('Menyambungkan akun ke database...');
 }
-function logout() { currentUser = null; localStorage.removeItem('pos_current_user'); showLoginScreen(); }
+function logout() { currentUser = null; sessionStorage.removeItem('pos_current_user'); showLoginScreen(); }
 
 // ===== HELPERS =====
 function rp(n) { return 'Rp ' + Number(n).toLocaleString('id-ID'); }
@@ -449,26 +461,29 @@ function renderPOS() {
   var ct = '', categories = getCategoryTabs();
   for (var i = 0; i < categories.length; i++) {
     var c = categories[i];
-    ct += '<button class="cat-tab ' + (currentCategory === c ? 'active' : '') + '" onclick="setCategory(\'' + c + '\')">' +
-      '<span class="tab-icon">' + getCategoryIcon(c) + '</span>' + c + '</button>';
+    ct += '<button class="cat-tab ' + (currentCategory === c ? 'active' : '') + '" onclick="setCategory(\'' + escapeJsString(c) + '\')">' +
+      '<span class="tab-icon">' + escapeHtml(getCategoryIcon(c)) + '</span>' + escapeHtml(c) + '</button>';
   }
   var ph = '';
   if (!f.length) ph = '<div class="empty-state"><div class="empty-icon">🔍</div><p>Produk tidak ditemukan</p></div>';
   else { ph = '<div class="product-grid" id="product-grid">'; for (var j = 0; j < f.length; j++) ph += renderProductCard(f[j]); ph += '</div>'; }
   return '<div class="page-enter"><div class="app-header"><div class="header-left">' +
-    '<div class="header-greeting">Halo, ' + getUserDisplayName(currentUser) + '</div>' +
+    '<div class="header-greeting">Halo, ' + escapeHtml(getUserDisplayName(currentUser)) + '</div>' +
     '<div class="header-title">POS Uteru F&B</div></div><div class="header-right">' +
     '<button class="icon-btn" onclick="openCartModal()">🛒' + (cartCount() ? '<span class="badge">' + cartCount() + '</span>' : '') + '</button></div></div>' +
     '<div class="search-bar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>' +
-    '<input type="text" id="search-input" placeholder="Cari produk..." value="' + searchQuery + '" oninput="handleSearch(this.value)" /></div>' +
-    '<div class="category-tabs">' + ct + '</div><div class="section-title" id="section-title">' + cl + '</div>' + ph +
+    '<input type="text" id="search-input" placeholder="Cari produk..." value="' + escapeHtml(searchQuery) + '" oninput="handleSearch(this.value)" /></div>' +
+    '<div class="category-tabs">' + ct + '</div><div class="section-title" id="section-title">' + escapeHtml(cl) + '</div>' + ph +
     (cart.length ? renderBottomCart() : '') + '</div>';
 }
 function renderProductCard(p) {
-  var dImg = p.image ? '<img src="' + p.image + '" alt="' + p.name + '" class="real-product-img" onerror="this.style.display=\'none\'" />' + p.icon : p.icon;
-  if (p.isCustomPrice) return '<div class="product-card" id="card-' + p.id + '"><div class="product-img">' + dImg + '</div><div class="product-body"><div class="product-name">' + p.name + '</div><div class="product-desc">' + p.desc + '</div><div class="custom-input-group"><div class="custom-input-row"><input type="text" id="cprice-' + p.id + '" placeholder="Harga (Rp)" inputmode="numeric" oninput="formatCurrency(this)" onclick="event.stopPropagation()" /></div><button class="custom-add-full-btn" onclick="event.stopPropagation(); addCustomToCart(' + p.id + ')">+ Tambah</button></div></div></div>';
-  if (p.hasVariant) return '<div class="product-card" onclick="openVariantModal(' + p.id + ')"><div class="product-img">' + dImg + '</div><div class="product-body"><div class="product-name">' + p.name + '</div><div class="product-desc">Pilih varian & jumlah</div><div class="product-footer"><span class="product-price">' + rp(p.price) + '</span><button class="add-btn">...</button></div></div></div>';
-  return '<div class="product-card" onclick="addToCart(' + p.id + ')"><div class="product-img">' + dImg + '</div><div class="product-body"><div class="product-name">' + p.name + '</div><div class="product-desc">' + (p.desc || '') + '</div><div class="product-footer"><span class="product-price">' + rp(p.price) + '</span><button class="add-btn">+</button></div></div></div>';
+  var safeName = escapeHtml(p.name);
+  var safeDesc = escapeHtml(p.desc || '');
+  var safeIcon = escapeHtml(p.icon || '');
+  var dImg = p.image ? '<img src="' + escapeHtml(p.image) + '" alt="' + safeName + '" class="real-product-img" onerror="this.style.display=\'none\'" />' + safeIcon : safeIcon;
+  if (p.isCustomPrice) return '<div class="product-card" id="card-' + p.id + '"><div class="product-img">' + dImg + '</div><div class="product-body"><div class="product-name">' + safeName + '</div><div class="product-desc">' + safeDesc + '</div><div class="custom-input-group"><div class="custom-input-row"><input type="text" id="cprice-' + p.id + '" placeholder="Harga (Rp)" inputmode="numeric" oninput="formatCurrency(this)" onclick="event.stopPropagation()" /></div><button class="custom-add-full-btn" onclick="event.stopPropagation(); addCustomToCart(' + p.id + ')">+ Tambah</button></div></div></div>';
+  if (p.hasVariant) return '<div class="product-card" onclick="openVariantModal(' + p.id + ')"><div class="product-img">' + dImg + '</div><div class="product-body"><div class="product-name">' + safeName + '</div><div class="product-desc">Pilih varian & jumlah</div><div class="product-footer"><span class="product-price">' + rp(p.price) + '</span><button class="add-btn">...</button></div></div></div>';
+  return '<div class="product-card" onclick="addToCart(' + p.id + ')"><div class="product-img">' + dImg + '</div><div class="product-body"><div class="product-name">' + safeName + '</div><div class="product-desc">' + safeDesc + '</div><div class="product-footer"><span class="product-price">' + rp(p.price) + '</span><button class="add-btn">+</button></div></div></div>';
 }
 function renderBottomCart() {
   return '<div class="bottom-cart"><div class="cart-info"><div class="cart-count">' + cartCount() + ' item</div><div class="cart-total">' + rp(cartTotal()) + '</div></div><button class="checkout-btn" onclick="openCartModal()">Lihat Keranjang</button></div>';
@@ -482,7 +497,7 @@ function openVariantModal(id) {
   var vb = ''; for (var v = 0; v < VARIANTS.length; v++) vb += '<button class="variant-pill ' + (v === 0 ? 'active' : '') + '" onclick="selectVariant(this,\'' + VARIANTS[v] + '\')">' + VARIANTS[v] + '</button>';
   var o = document.createElement('div'); o.className = 'modal-overlay'; o.id = 'variant-modal';
   o.onclick = function (e) { if (e.target === o) closeModal('variant-modal') };
-  o.innerHTML = '<div class="modal-sheet variant-sheet"><div class="handle"></div><div class="variant-header"><span class="variant-icon">' + p.icon + '</span><div><h2 style="text-align:left;margin:0">' + p.name + '</h2><p style="font-size:0.8rem;color:var(--text-muted);margin-top:2px">' + rp(p.price) + ' per pcs</p></div></div><div class="form-row"><label>Pilih Varian</label><div class="variant-pills">' + vb + '</div></div><div class="form-row"><label>Jumlah</label><div class="qty-selector"><button class="qty-btn-lg" onclick="changeVariantQty(-1)">-</button><span class="qty-display" id="variant-qty">1</span><button class="qty-btn-lg" onclick="changeVariantQty(1)">+</button></div></div><button class="btn btn-primary btn-block" onclick="addVariantToCart(' + id + ')" style="margin-top:16px">+ Tambah - ' + rp(p.price) + '</button></div>';
+  o.innerHTML = '<div class="modal-sheet variant-sheet"><div class="handle"></div><div class="variant-header"><span class="variant-icon">' + escapeHtml(p.icon) + '</span><div><h2 style="text-align:left;margin:0">' + escapeHtml(p.name) + '</h2><p style="font-size:0.8rem;color:var(--text-muted);margin-top:2px">' + rp(p.price) + ' per pcs</p></div></div><div class="form-row"><label>Pilih Varian</label><div class="variant-pills">' + vb + '</div></div><div class="form-row"><label>Jumlah</label><div class="qty-selector"><button class="qty-btn-lg" onclick="changeVariantQty(-1)">-</button><span class="qty-display" id="variant-qty">1</span><button class="qty-btn-lg" onclick="changeVariantQty(1)">+</button></div></div><button class="btn btn-primary btn-block" onclick="addVariantToCart(' + id + ')" style="margin-top:16px">+ Tambah - ' + rp(p.price) + '</button></div>';
   document.body.appendChild(o);
 }
 function selectVariant(el, v) { selectedVariant = v; var ps = document.querySelectorAll('.variant-pill'); for (var i = 0; i < ps.length; i++) ps[i].classList.remove('active'); el.classList.add('active'); }
@@ -527,7 +542,7 @@ function openCartModal() {
   closeModal('cart-modal');
   var ih = ''; for (var i = 0; i < cart.length; i++) {
     var it = cart[i];
-    ih += '<div class="cart-item-row"><div class="cart-item-info"><div class="cart-item-name">' + it.name + '</div><div class="cart-item-price">' + rp(it.price) + ' x ' + it.qty + ' = ' + rp(it.price * it.qty) + '</div></div><div class="cart-item-qty"><button class="qty-btn" onclick="changeQty(' + i + ',-1)">-</button><span class="qty-num">' + it.qty + '</span><button class="qty-btn" onclick="changeQty(' + i + ',1)">+</button></div></div>';
+    ih += '<div class="cart-item-row"><div class="cart-item-info"><div class="cart-item-name">' + escapeHtml(it.name) + '</div><div class="cart-item-price">' + rp(it.price) + ' x ' + it.qty + ' = ' + rp(it.price * it.qty) + '</div></div><div class="cart-item-qty"><button class="qty-btn" onclick="changeQty(' + i + ',-1)">-</button><span class="qty-num">' + it.qty + '</span><button class="qty-btn" onclick="changeQty(' + i + ',1)">+</button></div></div>';
   }
   var o = document.createElement('div'); o.className = 'modal-overlay'; o.id = 'cart-modal';
   o.onclick = function (e) { if (e.target === o) closeModal('cart-modal') };
@@ -577,7 +592,7 @@ async function processCheckout() {
   var txId = savedTx && savedTx.transactionCode ? savedTx.transactionCode : '-';
   closeModal('cart-modal');
   var ov = document.createElement('div'); ov.className = 'success-overlay'; ov.id = 'success-overlay';
-  ov.innerHTML = '<div class="check-icon">✅</div><h2>Transaksi Berhasil!</h2><p>' + rp(total) + ' via ' + selectedPayment + '</p><p style="font-size:0.75rem;opacity:0.7;margin-top:8px">' + txId + ' - ' + currentUser.name + '</p>';
+  ov.innerHTML = '<div class="check-icon">✅</div><h2>Transaksi Berhasil!</h2><p>' + rp(total) + ' via ' + escapeHtml(selectedPayment) + '</p><p style="font-size:0.75rem;opacity:0.7;margin-top:8px">' + escapeHtml(txId) + ' - ' + escapeHtml(getUserDisplayName(currentUser)) + '</p>';
   document.body.appendChild(ov); cart = []; selectedPayment = 'CASH';
   setTimeout(function () { var el = document.getElementById('success-overlay'); if (el) el.remove(); render(); }, 2500);
 }
@@ -591,12 +606,12 @@ function openReceipt(index) {
   var ts = d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   var ih = ''; for (var j = 0; j < tx.items.length; j++) {
     var it = tx.items[j];
-    ih += '<div class="receipt-item"><div class="receipt-item-left"><span class="receipt-item-name">' + it.name + '</span><span class="receipt-item-detail">' + it.qty + ' x ' + rp(it.price) + '</span></div><span class="receipt-item-total">' + rp(it.price * it.qty) + '</span></div>';
+    ih += '<div class="receipt-item"><div class="receipt-item-left"><span class="receipt-item-name">' + escapeHtml(it.name) + '</span><span class="receipt-item-detail">' + it.qty + ' x ' + rp(it.price) + '</span></div><span class="receipt-item-total">' + rp(it.price * it.qty) + '</span></div>';
   }
   var o = document.createElement('div'); o.className = 'modal-overlay'; o.id = 'receipt-modal';
   o.onclick = function (e) { if (e.target === o) closeModal('receipt-modal') };
-  o.innerHTML = '<div class="modal-sheet"><div class="handle"></div><div class="receipt-header"><div class="receipt-logo">🧾</div><h2 style="margin:0">RESI PENJUALAN</h2><p class="receipt-id">' + (tx.id || '-') + '</p></div>' +
-    '<div class="receipt-meta"><div class="receipt-meta-row"><span>Tanggal</span><span>' + ds + '</span></div><div class="receipt-meta-row"><span>Waktu</span><span>' + ts + '</span></div><div class="receipt-meta-row"><span>Kasir</span><span>' + (tx.cashier || '-') + '</span></div><div class="receipt-meta-row"><span>Pembayaran</span><span class="receipt-badge">' + (tx.method === 'CASH' ? '💵' : tx.method === 'QRIS' ? '📱' : '🏦') + ' ' + tx.method + '</span></div></div>' +
+  o.innerHTML = '<div class="modal-sheet"><div class="handle"></div><div class="receipt-header"><div class="receipt-logo">🧾</div><h2 style="margin:0">RESI PENJUALAN</h2><p class="receipt-id">' + escapeHtml(tx.id || '-') + '</p></div>' +
+    '<div class="receipt-meta"><div class="receipt-meta-row"><span>Tanggal</span><span>' + escapeHtml(ds) + '</span></div><div class="receipt-meta-row"><span>Waktu</span><span>' + escapeHtml(ts) + '</span></div><div class="receipt-meta-row"><span>Kasir</span><span>' + escapeHtml(tx.cashier || '-') + '</span></div><div class="receipt-meta-row"><span>Pembayaran</span><span class="receipt-badge">' + (tx.method === 'CASH' ? '💵' : tx.method === 'QRIS' ? '📱' : '🏦') + ' ' + escapeHtml(tx.method) + '</span></div></div>' +
     '<div class="receipt-divider"></div><div class="receipt-items">' + ih + '</div><div class="receipt-divider"></div>' +
     '<div class="receipt-total-section"><div class="receipt-total-row"><span>Total</span><span class="receipt-grand-total">' + rp(tx.total) + '</span></div></div>' +
     '<div class="btn-row" style="margin-top:20px">' +
@@ -645,7 +660,7 @@ function renderOwnerStockPage() {
     var qty = ms.current;
 
     masterHtml += '<div class="stock-card"><div class="stock-info">' +
-      '<div class="stock-name">' + p.icon + ' ' + p.name + '</div>' +
+      '<div class="stock-name">' + escapeHtml(p.icon) + ' ' + escapeHtml(p.name) + '</div>' +
       '<div class="stock-detail">Stok: ' + formatPlastikPcs(qty, p.pcsPerPack) + ' (' + qty + ' pcs)' +
       (ms.used > 0 ? ' <span style="font-size:0.7em;color:gray;">| ' + ms.used + ' pcs dipakai</span>' : '') +
       '</div></div>' +
@@ -672,7 +687,7 @@ function openAddMasterStock(productId, currentQty) {
   var p = findProduct(productId); if (!p) return;
   var o = document.createElement('div'); o.className = 'modal-overlay'; o.id = 'master-stock-modal';
   o.onclick = function (e) { if (e.target === o) closeModal('master-stock-modal') };
-  o.innerHTML = '<div class="modal-sheet"><div class="handle"></div><h2>' + p.icon + ' ' + p.name + '</h2>' +
+  o.innerHTML = '<div class="modal-sheet"><div class="handle"></div><h2>' + escapeHtml(p.icon) + ' ' + escapeHtml(p.name) + '</h2>' +
     '<p style="text-align:center;font-size:0.78rem;color:var(--text-muted)">Stok saat ini: ' + formatPlastikPcs(currentQty, p.pcsPerPack) + ' (' + currentQty + ' pcs)</p>' +
     '<div class="form-row" style="margin-top:16px"><label>Tambah Stok (plastik)</label><input type="number" id="add-master-pack" placeholder="0" min="0" /></div>' +
     '<div class="form-row"><label>Tambah Stok (pcs lepas)</label><input type="number" id="add-master-loose" placeholder="0" min="0" /></div>' +
@@ -718,7 +733,7 @@ function openStockModal(shift) {
   for (var i = 0; i < sp.length; i++) {
     var p = sp[i], existing = null;
     for (var k = 0; k < STOCK_LOGS.length; k++) { if (STOCK_LOGS[k].productId === p.id && STOCK_LOGS[k].shift === shift && STOCK_LOGS[k].day === today) { existing = STOCK_LOGS[k]; break; } }
-    ih += '<div class="stock-input-row"><div class="stock-input-label"><span class="stock-input-icon">' + p.icon + '</span><div><div class="stock-input-name">' + p.name + '</div><div class="stock-input-info">1 plastik = ' + p.pcsPerPack + ' pcs' + (existing ? ' (sudah diisi)' : '') + '</div></div></div>' +
+    ih += '<div class="stock-input-row"><div class="stock-input-label"><span class="stock-input-icon">' + escapeHtml(p.icon) + '</span><div><div class="stock-input-name">' + escapeHtml(p.name) + '</div><div class="stock-input-info">1 plastik = ' + p.pcsPerPack + ' pcs' + (existing ? ' (sudah diisi)' : '') + '</div></div></div>' +
       '<div class="stock-input-fields"><div class="stock-field"><input type="number" id="spack-' + p.id + '" placeholder="0" min="0" value="' + (existing ? existing.packs : '') + '" /><span class="stock-field-label">plastik</span></div>' +
       '<div class="stock-field"><input type="number" id="sloose-' + p.id + '" placeholder="0" min="0" value="' + (existing ? existing.loose : '') + '" /><span class="stock-field-label">pcs lepas</span></div></div></div>';
   }
@@ -775,8 +790,8 @@ async function submitBatchStock(shift) {
 function renderStockList(logs) {
   var h = ''; for (var i = 0; i < logs.length; i++) {
     var s = logs[i], pp = s.pcsPerPack || 1, tp = s.totalPcs || (s.packs * pp + s.loose);
-    h += '<div class="stock-card"><div class="stock-info"><div class="stock-name">' + s.product + '</div>' +
-      '<div class="stock-detail">' + formatPlastikPcs(tp, pp) + ' (' + tp + ' pcs)' + (s.staff ? ' - ' + s.staff : '') + '</div></div></div>';
+    h += '<div class="stock-card"><div class="stock-info"><div class="stock-name">' + escapeHtml(s.product) + '</div>' +
+      '<div class="stock-detail">' + formatPlastikPcs(tp, pp) + ' (' + tp + ' pcs)' + (s.staff ? ' - ' + escapeHtml(s.staff) : '') + '</div></div></div>';
   }
   return h;
 }
@@ -826,7 +841,7 @@ function renderReportPage() {
     for (var tm = 0; tm < topMenu.length; tm++) {
       var m = topMenu[tm];
       var medal = tm === 0 ? '🥇' : tm === 1 ? '🥈' : tm === 2 ? '🥉' : (tm + 1) + '.';
-      topMenuHtml += '<div class="report-row"><div class="report-row-left"><div class="report-row-name">' + medal + ' ' + m.name + '</div>' +
+      topMenuHtml += '<div class="report-row"><div class="report-row-left"><div class="report-row-name">' + medal + ' ' + escapeHtml(m.name) + '</div>' +
         '<div class="report-row-sub">' + m.qty + ' terjual</div></div>' +
         '<div class="report-row-right"><div class="report-row-value">' + rp(m.revenue) + '</div></div></div>';
     }
@@ -847,8 +862,8 @@ function renderReportPage() {
       stockHtml = '<div class="section-title" style="padding:0;margin:20px 0 12px">📦 Stok Terpakai</div>';
       for (var d = 0; d < diffs.length; d++) {
         var df = diffs[d];
-        stockHtml += '<div class="report-row clickable" onclick="showStockDetail(' + df.morning + ',' + df.night + ',' + df.used + ',' + df.pcsPerPack + ',\'' + df.product.replace(/'/g, "\\'") + '\')">' +
-          '<div class="report-row-left"><div class="report-row-name">' + df.product + '</div><div class="report-row-sub">Terpakai: ' + formatPlastikPcs(df.used, df.pcsPerPack) + '</div></div>' +
+        stockHtml += '<div class="report-row clickable" onclick="showStockDetail(' + df.morning + ',' + df.night + ',' + df.used + ',' + df.pcsPerPack + ',\'' + escapeJsString(df.product) + '\')">' +
+          '<div class="report-row-left"><div class="report-row-name">' + escapeHtml(df.product) + '</div><div class="report-row-sub">Terpakai: ' + formatPlastikPcs(df.used, df.pcsPerPack) + '</div></div>' +
           '<div class="report-row-right"><div class="stock-diff used">-' + df.used + '</div><div class="report-row-arrow">></div></div></div>';
       }
     }
@@ -871,7 +886,7 @@ function renderReportPage() {
       var sum = h.items.map(function (x) { return x.qty + 'x ' + (x.name || 'Produk'); }).join(', ');
       if (sum.length > 35) sum = sum.substring(0, 35) + '...';
       var ri = hist.indexOf(h);
-      lh += '<div class="report-row clickable" onclick="openReceipt(' + ri + ')"><div class="report-row-left"><div class="report-row-name">' + sum + '</div><div class="report-row-sub">' + ds + ' ' + time + ' - ' + h.method + (h.cashier ? ' - ' + h.cashier : '') + '</div></div><div class="report-row-right"><div class="report-row-value">' + rp(h.total) + '</div><div class="report-row-arrow">></div></div></div>';
+      lh += '<div class="report-row clickable" onclick="openReceipt(' + ri + ')"><div class="report-row-left"><div class="report-row-name">' + escapeHtml(sum) + '</div><div class="report-row-sub">' + escapeHtml(ds) + ' ' + escapeHtml(time) + ' - ' + escapeHtml(h.method) + (h.cashier ? ' - ' + escapeHtml(h.cashier) : '') + '</div></div><div class="report-row-right"><div class="report-row-value">' + rp(h.total) + '</div><div class="report-row-arrow">></div></div></div>';
     }
   }
 
@@ -902,7 +917,7 @@ function showStockDetail(morning, night, used, pcsPerPack, product) {
   closeModal('stock-detail-modal');
   var o = document.createElement('div'); o.className = 'modal-overlay'; o.id = 'stock-detail-modal';
   o.onclick = function (e) { if (e.target === o) closeModal('stock-detail-modal') };
-  o.innerHTML = '<div class="modal-sheet"><div class="handle"></div><h2>📦 ' + product + '</h2><div class="receipt-meta">' +
+  o.innerHTML = '<div class="modal-sheet"><div class="handle"></div><h2>📦 ' + escapeHtml(product) + '</h2><div class="receipt-meta">' +
     '<div class="receipt-meta-row"><span>Stok Pagi</span><span>' + formatPlastikPcs(morning, pcsPerPack) + ' (' + morning + ' pcs)</span></div>' +
     '<div class="receipt-meta-row"><span>Stok Malam</span><span>' + formatPlastikPcs(night, pcsPerPack) + ' (' + night + ' pcs)</span></div>' +
     '<div class="receipt-meta-row"><span><strong>Terpakai</strong></span><span><strong>' + formatPlastikPcs(used, pcsPerPack) + ' (' + used + ' pcs)</strong></span></div>' +
@@ -916,8 +931,8 @@ function renderProfilePage() {
   var ownerTools = isOwner()
     ? '<div style="padding:20px 20px 0"><button class="btn btn-profile-add btn-block" onclick="openCreateProfileModal()"><span>+</span> Tambah Profile</button></div>'
     : '';
-  return '<div class="stock-page page-enter profile-page"><div class="app-header"><div><div class="header-greeting">Profil</div><div class="header-title">' + getUserDisplayName(currentUser) + '</div></div></div>' +
-    '<div class="receipt-meta" style="margin:0 20px"><div class="receipt-meta-row"><span>Nama</span><span>' + getUserDisplayName(currentUser) + '</span></div><div class="receipt-meta-row"><span>Role</span><span class="receipt-badge">' + (isOwner() ? '👑 Owner' : '👤 Staff') + '</span></div></div>' +
+  return '<div class="stock-page page-enter profile-page"><div class="app-header"><div><div class="header-greeting">Profil</div><div class="header-title">' + escapeHtml(getUserDisplayName(currentUser)) + '</div></div></div>' +
+    '<div class="receipt-meta" style="margin:0 20px"><div class="receipt-meta-row"><span>Nama</span><span>' + escapeHtml(getUserDisplayName(currentUser)) + '</span></div><div class="receipt-meta-row"><span>Role</span><span class="receipt-badge">' + (isOwner() ? '👑 Owner' : '👤 Staff') + '</span></div></div>' +
     ownerTools +
     '<div style="padding:20px"><button class="btn btn-danger btn-block" onclick="logout()">Logout</button></div></div>';
 }
@@ -974,7 +989,7 @@ function renderBottomNav() {
   var n = '<nav class="bottom-nav"><button class="nav-item ' + (currentPage === 'pos' ? 'active' : '') + '" onclick="navigate(\'pos\')"><span class="nav-icon">🏠</span>Kasir</button>';
   n += '<button class="nav-item ' + (currentPage === 'stock' ? 'active' : '') + '" onclick="navigate(\'stock\')"><span class="nav-icon">📦</span>Stok</button>';
   n += '<button class="nav-item ' + (currentPage === 'report' ? 'active' : '') + '" onclick="navigate(\'report\')"><span class="nav-icon">📊</span>Laporan</button>';
-  n += '<button class="nav-item ' + (currentPage === 'profile' ? 'active' : '') + '" onclick="navigate(\'profile\')"><span class="nav-icon">' + getUserAvatar(currentUser) + '</span>Profil</button></nav>';
+  n += '<button class="nav-item ' + (currentPage === 'profile' ? 'active' : '') + '" onclick="navigate(\'profile\')"><span class="nav-icon">' + escapeHtml(getUserAvatar(currentUser)) + '</span>Profil</button></nav>';
   return n;
 }
 function closeModal(id) { var el = document.getElementById(id); if (el) el.remove(); }

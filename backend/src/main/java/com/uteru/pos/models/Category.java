@@ -1,6 +1,9 @@
 package com.uteru.pos.models;
 
 import jakarta.persistence.*;
+import com.uteru.pos.validation.NoMarkup;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 @Entity
 @Table(name = "categories")
@@ -9,7 +12,10 @@ public class Category {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 80)
+    @NotBlank
+    @Size(max = 80)
+    @NoMarkup
     private String name;
 
     public Category() {}

@@ -123,13 +123,6 @@ INSERT INTO products (
   (28, 'Pentol Besar', 'Harga custom', 2, 0.00, 1, 1, NULL, 'Plastik', 8, 1, 0),
   (30, 'Kelapa Bijian', 'Harga custom', 1, 0.00, 1, 1, NULL, NULL, 1, 0, 0);
 
-INSERT INTO pos_users (
-  id, username, email, name, role, avatar, password_hash, is_active
-) VALUES
-  (1, 'owner', 'owner@uteru.local', 'Owner', 'owner', 'O', 'pbkdf2_sha256$60000$dXRlcnUtb3duZXItc2FsdA==$j1/NnPqfAMh0F06YUaG/QODKM7Lal+3NInPvzIhAAiA=', 1),
-  (2, 'staff1', 'staff1@uteru.local', 'Bu Rani', 'staff', 'R', 'pbkdf2_sha256$60000$dXRlcnUtc3RhZmYxLXNhbHQ=$riOx4RXBbpqf5IkHYFrMbFteLSTPYIfz/pJ6mzUL92Y=', 1),
-  (3, 'staff2', 'staff2@uteru.local', 'Nadya', 'staff', 'N', 'pbkdf2_sha256$60000$dXRlcnUtc3RhZmYyLXNhbHQ=$WPXtuySbfgc0FkMd4OiXLSDC5PvxEPOqt0O/xOkeDME=', 1);
-
 INSERT INTO transactions (
   id, transaction_code, transaction_date, cashier_name, payment_method,
   total_amount, amount_paid, change_amount
@@ -217,7 +210,7 @@ JOIN products p ON p.id = s.product_id;
 
 ALTER TABLE categories AUTO_INCREMENT = 3;
 ALTER TABLE products AUTO_INCREMENT = 31;
-ALTER TABLE pos_users AUTO_INCREMENT = 4;
+ALTER TABLE pos_users AUTO_INCREMENT = 1;
 ALTER TABLE transactions AUTO_INCREMENT = 41;
 ALTER TABLE transaction_details AUTO_INCREMENT = 47;
 ALTER TABLE stock_logs AUTO_INCREMENT = 3006;

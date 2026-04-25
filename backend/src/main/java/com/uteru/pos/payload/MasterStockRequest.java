@@ -1,9 +1,25 @@
 package com.uteru.pos.payload;
 
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+
 public class MasterStockRequest {
+    @NotNull
+    @Positive
     private Long productId;
+
+    @Min(0)
+    @Max(1_000_000)
     private Integer addPackQuantity;
+
+    @Min(0)
+    @Max(1_000_000)
     private Integer addLoosePcsQuantity;
+
+    @Min(0)
+    @Max(100_000_000)
     private Integer setTotalPcs;
 
     public Long getProductId() {

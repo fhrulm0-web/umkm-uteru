@@ -1,6 +1,14 @@
 package com.uteru.pos.models;
 
+import com.uteru.pos.validation.NoMarkup;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Digits;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 
 @Entity
@@ -10,10 +18,15 @@ public class Product {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 120)
+    @NotBlank
+    @Size(max = 120)
+    @NoMarkup
     private String name;
 
-    @Column(name = "description")
+    @Column(name = "description", length = 500)
+    @Size(max = 500)
+    @NoMarkup
     private String description;
 
     @ManyToOne
@@ -21,6 +34,9 @@ public class Product {
     private Category category;
 
     @Column(nullable = false)
+    @NotNull
+    @DecimalMin("0.00")
+    @Digits(integer = 12, fraction = 2)
     private BigDecimal price;
 
     @Column(name = "is_active")
@@ -30,19 +46,27 @@ public class Product {
     private Boolean isCustomPrice = false;
 
     @Column(name = "icon")
+    @Size(max = 16)
+    @NoMarkup
     private String icon;
 
     // Konversi kemasan: packName = "Plastik", pcsPerPack = 25
-    @Column(name = "pack_name")
+    @Column(name = "pack_name", length = 40)
+    @Size(max = 40)
+    @NoMarkup
     private String packName;
 
     @Column(name = "pcs_per_pack")
+    @Min(1)
+    @Max(1_000_000)
     private Integer pcsPerPack = 1;
 
     @Column(name = "track_stock")
     private Boolean trackStock = false;
 
     @Column(name = "current_stock_pcs")
+    @Min(0)
+    @Max(100_000_000)
     private Integer currentStockPcs = 0;
 
     public Product() {}

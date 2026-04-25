@@ -6,6 +6,7 @@ import com.uteru.pos.payload.UserProfileRequest;
 import com.uteru.pos.payload.UserResponse;
 import com.uteru.pos.repositories.PosUserRepository;
 import com.uteru.pos.security.PasswordUtil;
+import com.uteru.pos.validation.InputSanitizer;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -21,7 +22,7 @@ public class AuthService {
     }
 
     public UserResponse login(LoginRequest request) {
-        String identity = normalize(request.getIdentity());
+        String identity = InputSanitizer.cleanText(request.getIdentity());
         String password = request.getPassword();
 
         if (identity.isBlank() || password == null || password.isBlank()) {
@@ -45,10 +46,10 @@ public class AuthService {
     }
 
     public UserResponse createProfile(UserProfileRequest request) {
-        String username = normalize(request.getUsername());
-        String email = emptyToNull(request.getEmail());
+        String username = InputSanitizer.cleanText(request.getUsername());
+        String email = InputSanitizer.cleanEmail(request.getEmail());
         String password = request.getPassword();
-        String name = normalize(request.getName());
+        String name = InputSanitizer.cleanText(request.getName());
         String role = normalizeRole(request.getRole());
 
         if (username.isBlank() || name.isBlank() || password == null || password.isBlank()) {
@@ -69,19 +70,14 @@ public class AuthService {
         user.setPasswordHash(PasswordUtil.hashPassword(password));
         user.setName(name);
         user.setRole(role);
-        user.setAvatar(emptyToNull(request.getAvatar()));
+        user.setAvatar(InputSanitizer.cleanNullableText(request.getAvatar()));
         user.setIsActive(true);
 
         return new UserResponse(userRepository.save(user));
     }
 
     private String normalize(String value) {
-        return value == null ? "" : value.trim();
-    }
-
-    private String emptyToNull(String value) {
-        String normalized = normalize(value);
-        return normalized.isBlank() ? null : normalized;
+        return InputSanitizer.cleanText(value);
     }
 
     private String normalizeRole(String role) {

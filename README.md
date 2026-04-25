@@ -48,11 +48,28 @@ Jalankan di terminal/PowerShell pertama:
 ```powershell
 $env:JAVA_HOME="C:\Program Files\Java\jdk-25.0.2"
 $env:MYSQL_HOST="localhost"
+$env:MYSQL_PORT="3306"
+$env:MYSQL_DATABASE="posdb"
+$env:MYSQL_USERNAME="root"
 $env:MYSQL_PASSWORD="<password_mysql_kamu>"
 cd backend
 .\mvnw.cmd spring-boot:run
 ```
 *Atau* gunakan file *helper* bawaan: `.\start-backend.ps1 -MysqlPassword "<password>"`
+
+User awal tidak lagi dibuat dengan password bawaan. Untuk database baru, buat user lewat API setelah login dengan akun yang sudah ada, atau aktifkan seed user hanya saat setup lokal:
+```powershell
+$env:POS_SEED_USERS_ENABLED="true"
+$env:POS_SEED_OWNER_PASSWORD="<owner-password-kuat>"
+$env:POS_SEED_STAFF1_PASSWORD="<staff1-password-kuat>"
+$env:POS_SEED_STAFF2_PASSWORD="<staff2-password-kuat>"
+```
+
+Konfigurasi keamanan penting:
+* `CORS_ALLOWED_ORIGINS` - origin frontend yang diizinkan, default `http://localhost:5173,http://127.0.0.1:5173`.
+* `POS_AUTH_RATE_LIMIT_MAX` dan `POS_AUTH_RATE_LIMIT_WINDOW` - default 5 percobaan auth per 15 menit.
+* `POS_API_RATE_LIMIT_MAX` dan `POS_API_RATE_LIMIT_WINDOW` - default 300 request API per 15 menit.
+* `POS_MAX_REQUEST_BYTES` - default 65536 byte per payload API.
 
 Servis backend akan berjalan di `http://localhost:8080`.
 

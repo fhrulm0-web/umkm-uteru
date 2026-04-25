@@ -1,6 +1,7 @@
 package com.uteru.pos;
 
 import com.uteru.pos.security.PasswordUtil;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -11,9 +12,21 @@ import java.math.BigDecimal;
 public class DataInitializer implements CommandLineRunner {
 
     private final JdbcTemplate jdbcTemplate;
+    private final boolean seedUsersEnabled;
+    private final String ownerPassword;
+    private final String staff1Password;
+    private final String staff2Password;
 
-    public DataInitializer(JdbcTemplate jdbcTemplate) {
+    public DataInitializer(JdbcTemplate jdbcTemplate,
+                           @Value("${pos.seed-users.enabled:false}") boolean seedUsersEnabled,
+                           @Value("${pos.seed-users.owner-password:}") String ownerPassword,
+                           @Value("${pos.seed-users.staff1-password:}") String staff1Password,
+                           @Value("${pos.seed-users.staff2-password:}") String staff2Password) {
         this.jdbcTemplate = jdbcTemplate;
+        this.seedUsersEnabled = seedUsersEnabled;
+        this.ownerPassword = ownerPassword;
+        this.staff1Password = staff1Password;
+        this.staff2Password = staff2Password;
     }
 
     @Override
@@ -54,9 +67,11 @@ public class DataInitializer implements CommandLineRunner {
         upsertProduct(30L, "Kelapa Bijian", "Harga custom", 1L,
                 0, false, true, null, 1);
 
-        insertUserIfMissing("owner", "owner@uteru.local", "Owner", "owner", "O", "admin123");
-        insertUserIfMissing("staff1", "staff1@uteru.local", "Bu Rani", "staff", "R", "1234");
-        insertUserIfMissing("staff2", "staff2@uteru.local", "Nadya", "staff", "N", "1234");
+        if (seedUsersEnabled) {
+            insertUserIfMissing("owner", "owner@uteru.local", "Owner", "owner", "O", ownerPassword);
+            insertUserIfMissing("staff1", "staff1@uteru.local", "Bu Rani", "staff", "R", staff1Password);
+            insertUserIfMissing("staff2", "staff2@uteru.local", "Nadya", "staff", "N", staff2Password);
+        }
     }
 
     private void upsertCategory(Long id, String name) {
@@ -106,6 +121,10 @@ public class DataInitializer implements CommandLineRunner {
                                      String role,
                                      String avatar,
                                      String password) {
+        if (password == null || password.isBlank()) {
+            throw new IllegalStateException("Seed user passwords must be provided with POS_SEED_* environment variables");
+        }
+
         if (userExists(username)) {
             return;
         }
