@@ -58,11 +58,11 @@ public class DataInitializer implements CommandLineRunner {
                 0, true, true, "Plastik", 40);
         upsertProduct(25L, "Sempol", "Harga custom", 2L,
                 0, true, true, "Plastik", 30);
-        upsertProduct(26L, "Tahu Isi", "Harga custom", 2L,
+        upsertProduct(26L, "Tahu Isi", "Stok bahan pentol", 2L,
                 0, true, true, "Plastik", 25);
-        upsertProduct(27L, "Siomay", "Harga custom", 2L,
+        upsertProduct(27L, "Siomay", "Stok bahan pentol", 2L,
                 0, true, true, "Plastik", 16);
-        upsertProduct(28L, "Pentol Besar", "Harga custom", 2L,
+        upsertProduct(28L, "Pentol Besar", "Stok bahan pentol", 2L,
                 0, true, true, "Plastik", 8);
         upsertProduct(30L, "Kelapa Bijian", "Harga custom", 1L,
                 0, false, true, null, 1);
@@ -112,6 +112,22 @@ public class DataInitializer implements CommandLineRunner {
                     pcsPerPack,
                     trackStock,
                     0);
+        } else {
+            jdbcTemplate.update("""
+                    UPDATE products
+                    SET is_active = ?,
+                        track_stock = ?,
+                        is_custom_price = ?,
+                        pack_name = ?,
+                        pcs_per_pack = ?
+                    WHERE id = ?
+                    """,
+                    true,
+                    trackStock,
+                    customPrice,
+                    packName,
+                    pcsPerPack,
+                    id);
         }
     }
 

@@ -6,22 +6,40 @@ var API_BASE = (function () {
 var VARIANTS = ['Gula Putih', 'Aren', 'Sirup'];
 
 var PRODUCT_UI = {
-  1: { image: '/images/es-kelapa-plastik.jpg', icon: '\uD83E\uDD65', hasVariant: true },
-  2: { image: '/images/es-kelapa-cup-kecil.jpg', icon: '\uD83E\uDD64', hasVariant: true },
-  3: { image: '/images/es-kelapa-cup-besar.jpg', icon: '\uD83E\uDD64', hasVariant: true },
-  4: { image: '/images/es-jeruk-cup-besar.jpg', icon: '\uD83C\uDF4A' },
-  5: { image: '/images/es-jeruk-cup-kecil.jpg', icon: '\uD83C\uDF4A' },
-  6: { image: '/images/es-teh-cup-besar.jpg', icon: '\uD83C\uDF75' },
-  7: { image: '/images/es-teh-cup-kecil.jpg', icon: '\uD83C\uDF75' },
-  21: { image: '/images/pentol-kuah.jpg', icon: '\uD83C\uDF62' },
-  22: { image: '/images/pentol.jpg', icon: '\uD83C\uDF61' },
-  23: { image: '/images/pentol-goreng.jpg', icon: '\uD83C\uDF61' },
-  24: { image: '/images/pentol-telur.jpg', icon: '\uD83E\uDD5A' },
-  25: { image: '/images/sempol.jpg', icon: '\uD83C\uDF62' },
-  26: { image: '/images/tahu-isi.jpg', icon: '\uD83E\uDDC6' },
-  27: { image: '/images/siomay.jpg', icon: '\uD83E\uDD5F' },
-  28: { image: '/images/pentol-besar.jpg', icon: '\uD83C\uDF61' },
-  30: { image: '/images/kelapa-bijian.jpg', icon: '\uD83E\uDD65' }
+  1: { image: '/images/es kelapa plastik.png', icon: '\uD83E\uDD65', hasVariant: true },
+  2: { image: '/images/es kelapa aren cup sedang.png', icon: '\uD83E\uDD64', hasVariant: true },
+  3: { image: '/images/es kelapa aren cup jumbo.png', icon: '\uD83E\uDD64', hasVariant: true },
+  4: {
+    image: '/images/es jeruk cup sedang.png',
+    icon: '\uD83C\uDF4A',
+    displayName: 'Es Jeruk',
+    displayDesc: 'Pilih ukuran cup',
+    sizeOptions: [
+      { label: 'Cup Besar', productId: 4 },
+      { label: 'Cup Kecil', productId: 5 }
+    ]
+  },
+  5: { image: '/images/es jeruk cup sedang.png', icon: '\uD83C\uDF4A', hideFromPos: true },
+  6: {
+    image: '/images/es-teh-cup-besar.jpg',
+    icon: '\uD83C\uDF75',
+    displayName: 'Es Teh',
+    displayDesc: 'Pilih ukuran cup',
+    sizeOptions: [
+      { label: 'Cup Besar', productId: 6 },
+      { label: 'Cup Kecil', productId: 7 }
+    ]
+  },
+  7: { image: '/images/es-teh-cup-kecil.jpg', icon: '\uD83C\uDF75', hideFromPos: true },
+  21: { image: '/images/pentol kuah.png', icon: '\uD83C\uDF62' },
+  22: { image: '/images/tahu.png', icon: '\uD83C\uDF61' },
+  23: { image: '/images/pentol goreng.png', icon: '\uD83C\uDF61' },
+  24: { image: '/images/pentol telur.png', icon: '\uD83E\uDD5A' },
+  25: { image: '/images/sempol.png', icon: '\uD83C\uDF62' },
+  26: { image: '', icon: '\uD83E\uDDC6', hideFromPos: true },
+  27: { image: '', icon: '\uD83E\uDD5F', hideFromPos: true },
+  28: { image: '', icon: '\uD83C\uDF61', hideFromPos: true },
+  30: { image: '/images/buah kelapa ori.png', icon: '\uD83E\uDD65' }
 };
 var PRODUCTS = [];
 var POS_HISTORY = [];
@@ -36,10 +54,12 @@ var CAT_ICONS = { 'Semua': '\uD83C\uDFF7\uFE0F', 'Minuman': '\uD83E\uDD64', 'Mak
 function getStockProducts() { return PRODUCTS.filter(function (p) { return p.trackStock; }); }
 function findProduct(id) { for (var i = 0; i < PRODUCTS.length; i++) { if (PRODUCTS[i].id === id) return PRODUCTS[i]; } return null; }
 function getProductUi(id) { return PRODUCT_UI[id] || {}; }
+function isPosProduct(product) { return product && !product.hideFromPos; }
 function getCategoryTabs() {
   var tabs = ['Semua'];
   var seen = { 'Semua': true };
   for (var i = 0; i < PRODUCTS.length; i++) {
+    if (!isPosProduct(PRODUCTS[i])) continue;
     var cat = PRODUCTS[i].category || 'Lainnya';
     if (!seen[cat]) {
       seen[cat] = true;
@@ -122,6 +142,10 @@ function normalizeProduct(product) {
     category: (product.category && product.category.name) || 'Lainnya',
     icon: product.icon || ui.icon || '',
     hasVariant: !!ui.hasVariant,
+    displayName: ui.displayName || '',
+    displayDesc: ui.displayDesc || '',
+    sizeOptions: ui.sizeOptions || null,
+    hideFromPos: !!ui.hideFromPos,
     isCustomPrice: product.isCustomPrice === true,
     packName: product.packName || null,
     pcsPerPack: Number(product.pcsPerPack || 1),
@@ -419,10 +443,48 @@ function formatPlastikPcs(totalPcs, pcsPerPack) {
   return isNeg ? '-' + res : res;
 }
 function todayStr() { return formatDateOnly(new Date()); }
+function getProductDisplayName(product) { return (product && product.displayName) || (product && product.name) || ''; }
+function getProductDisplayDesc(product) { return (product && product.displayDesc) || (product && product.desc) || ''; }
+function getProductSizeOptions(product) {
+  var source = product && product.sizeOptions ? product.sizeOptions : [];
+  var options = [];
+  for (var i = 0; i < source.length; i++) {
+    var optionProduct = findProduct(source[i].productId);
+    if (!optionProduct) continue;
+    options.push({
+      label: source[i].label,
+      productId: optionProduct.id,
+      name: optionProduct.name,
+      price: optionProduct.price
+    });
+  }
+  return options;
+}
+function getProductPriceLabel(product) {
+  var options = getProductSizeOptions(product);
+  if (!options.length) return rp(product.price);
+  var min = options[0].price, max = options[0].price;
+  for (var i = 1; i < options.length; i++) {
+    if (options[i].price < min) min = options[i].price;
+    if (options[i].price > max) max = options[i].price;
+  }
+  return min === max ? rp(min) : rp(min) + ' - ' + rp(max);
+}
+function getProductSearchText(product) {
+  var parts = [product.name, getProductDisplayName(product), product.desc || '', getProductDisplayDesc(product)];
+  var options = getProductSizeOptions(product);
+  for (var i = 0; i < options.length; i++) parts.push(options[i].label, options[i].name);
+  return parts.join(' ').toLowerCase();
+}
 function getFilteredProducts() {
-  var list = PRODUCTS;
+  var list = PRODUCTS.filter(isPosProduct);
   if (currentCategory !== 'Semua') list = list.filter(function (p) { return p.category === currentCategory; });
-  if (searchQuery) { var q = searchQuery.toLowerCase(); list = list.filter(function (p) { return p.name.toLowerCase().indexOf(q) !== -1; }); }
+  if (searchQuery) {
+    var q = searchQuery.toLowerCase();
+    list = list.filter(function (p) {
+      return getProductSearchText(p).indexOf(q) !== -1;
+    });
+  }
   var unique = [];
   var seen = {};
   for (var i = 0; i < list.length; i++) {
@@ -477,16 +539,62 @@ function renderPOS() {
     (cart.length ? renderBottomCart() : '') + '</div>';
 }
 function renderProductCard(p) {
-  var safeName = escapeHtml(p.name);
-  var safeDesc = escapeHtml(p.desc || '');
+  var safeName = escapeHtml(getProductDisplayName(p));
+  var safeDesc = escapeHtml(getProductDisplayDesc(p));
   var safeIcon = escapeHtml(p.icon || '');
   var dImg = p.image ? '<img src="' + escapeHtml(p.image) + '" alt="' + safeName + '" class="real-product-img" onerror="this.style.display=\'none\'" />' + safeIcon : safeIcon;
+  var sizeOptions = getProductSizeOptions(p);
   if (p.isCustomPrice) return '<div class="product-card" id="card-' + p.id + '"><div class="product-img">' + dImg + '</div><div class="product-body"><div class="product-name">' + safeName + '</div><div class="product-desc">' + safeDesc + '</div><div class="custom-input-group"><div class="custom-input-row"><input type="text" id="cprice-' + p.id + '" placeholder="Harga (Rp)" inputmode="numeric" oninput="formatCurrency(this)" onclick="event.stopPropagation()" /></div><button class="custom-add-full-btn" onclick="event.stopPropagation(); addCustomToCart(' + p.id + ')">+ Tambah</button></div></div></div>';
+  if (sizeOptions.length) return '<div class="product-card" onclick="openSizeModal(' + p.id + ')"><div class="product-img">' + dImg + '</div><div class="product-body"><div class="product-name">' + safeName + '</div><div class="product-desc">Pilih ukuran & jumlah</div><div class="product-footer"><span class="product-price">' + getProductPriceLabel(p) + '</span><button class="add-btn">...</button></div></div></div>';
   if (p.hasVariant) return '<div class="product-card" onclick="openVariantModal(' + p.id + ')"><div class="product-img">' + dImg + '</div><div class="product-body"><div class="product-name">' + safeName + '</div><div class="product-desc">Pilih varian & jumlah</div><div class="product-footer"><span class="product-price">' + rp(p.price) + '</span><button class="add-btn">...</button></div></div></div>';
   return '<div class="product-card" onclick="addToCart(' + p.id + ')"><div class="product-img">' + dImg + '</div><div class="product-body"><div class="product-name">' + safeName + '</div><div class="product-desc">' + safeDesc + '</div><div class="product-footer"><span class="product-price">' + rp(p.price) + '</span><button class="add-btn">+</button></div></div></div>';
 }
 function renderBottomCart() {
   return '<div class="bottom-cart"><div class="cart-info"><div class="cart-count">' + cartCount() + ' item</div><div class="cart-total">' + rp(cartTotal()) + '</div></div><button class="checkout-btn" onclick="openCartModal()">Lihat Keranjang</button></div>';
+}
+
+// ===== SIZE MODAL =====
+var sizeOptionQty = 1, selectedSizeProductId = null;
+function openSizeModal(id) {
+  closeModal('size-modal'); sizeOptionQty = 1;
+  var p = findProduct(id); if (!p) return;
+  var options = getProductSizeOptions(p); if (!options.length) return;
+  selectedSizeProductId = options[0].productId;
+  var vb = '';
+  for (var v = 0; v < options.length; v++) {
+    vb += '<button class="variant-pill size-pill ' + (v === 0 ? 'active' : '') + '" onclick="selectSizeOption(this,' + options[v].productId + ')">' +
+      '<span class="variant-pill-main">' + escapeHtml(options[v].label) + '</span>' +
+      '<span class="variant-pill-sub">' + rp(options[v].price) + '</span></button>';
+  }
+  var o = document.createElement('div'); o.className = 'modal-overlay'; o.id = 'size-modal';
+  o.onclick = function (e) { if (e.target === o) closeModal('size-modal') };
+  o.innerHTML = '<div class="modal-sheet variant-sheet"><div class="handle"></div><div class="variant-header"><span class="variant-icon">' + escapeHtml(p.icon) + '</span><div><h2 style="text-align:left;margin:0">' + escapeHtml(getProductDisplayName(p)) + '</h2><p style="font-size:0.8rem;color:var(--text-muted);margin-top:2px">' + escapeHtml(getProductDisplayDesc(p)) + '</p></div></div><div class="form-row"><label>Pilih Ukuran</label><div class="variant-pills">' + vb + '</div></div><div class="form-row"><label>Jumlah</label><div class="qty-selector"><button class="qty-btn-lg" onclick="changeSizeQty(-1)">-</button><span class="qty-display" id="size-qty">1</span><button class="qty-btn-lg" onclick="changeSizeQty(1)">+</button></div></div><button class="btn btn-primary btn-block" id="size-add-btn" onclick="addSizeToCart(' + id + ')" style="margin-top:16px">+ Tambah - ' + rp(options[0].price) + '</button></div>';
+  document.body.appendChild(o);
+}
+function selectSizeOption(el, productId) {
+  selectedSizeProductId = productId;
+  var ps = document.querySelectorAll('#size-modal .variant-pill');
+  for (var i = 0; i < ps.length; i++) ps[i].classList.remove('active');
+  el.classList.add('active');
+  updateSizeAddButton();
+}
+function changeSizeQty(d) {
+  sizeOptionQty = Math.max(1, sizeOptionQty + d);
+  var qtyEl = document.getElementById('size-qty');
+  if (qtyEl) qtyEl.textContent = sizeOptionQty;
+  updateSizeAddButton();
+}
+function updateSizeAddButton() {
+  var p = findProduct(selectedSizeProductId);
+  var btn = document.getElementById('size-add-btn');
+  if (btn && p) btn.textContent = '+ Tambah - ' + rp(p.price);
+}
+function addSizeToCart(id) {
+  var p = findProduct(selectedSizeProductId); if (!p) return;
+  var key = 'size-' + p.id;
+  var ex = null; for (var j = 0; j < cart.length; j++) { if (cart[j].cartKey === key) { ex = cart[j]; break; } }
+  if (ex) ex.qty += sizeOptionQty; else cart.push({ id: p.id, name: p.name, price: p.price, qty: sizeOptionQty, cartKey: key });
+  closeModal('size-modal'); selectedSizeProductId = null; sizeOptionQty = 1; render();
 }
 
 // ===== VARIANT MODAL =====
@@ -522,7 +630,7 @@ function navigate(p) {
   syncPageData('Memuat data terbaru...');
 }
 function addToCart(id) {
-  var p = findProduct(id); if (!p || p.isCustomPrice || p.hasVariant) return;
+  var p = findProduct(id); if (!p || p.isCustomPrice || p.hasVariant || getProductSizeOptions(p).length) return;
   var ex = null; for (var j = 0; j < cart.length; j++) { if (cart[j].id === id && !cart[j].cartKey) { ex = cart[j]; break; } }
   if (ex) ex.qty++; else cart.push({ id: p.id, name: p.name, price: p.price, qty: 1 }); render();
 }
@@ -1004,6 +1112,10 @@ Object.assign(window, {
   setCategory: setCategory,
   handleSearch: handleSearch,
   openCartModal: openCartModal,
+  openSizeModal: openSizeModal,
+  selectSizeOption: selectSizeOption,
+  changeSizeQty: changeSizeQty,
+  addSizeToCart: addSizeToCart,
   openVariantModal: openVariantModal,
   selectVariant: selectVariant,
   changeVariantQty: changeVariantQty,

@@ -118,9 +118,9 @@ INSERT INTO products (
   (23, 'Pentol Goreng', 'Harga custom', 2, 0.00, 1, 1, NULL, 'Plastik', 20, 1, 28),
   (24, 'Pentol Telur', 'Harga custom', 2, 0.00, 1, 1, NULL, 'Plastik', 40, 1, 34),
   (25, 'Sempol', 'Harga custom', 2, 0.00, 1, 1, NULL, 'Plastik', 30, 1, 45),
-  (26, 'Tahu Isi', 'Harga custom', 2, 0.00, 1, 1, NULL, 'Plastik', 25, 1, 0),
-  (27, 'Siomay', 'Harga custom', 2, 0.00, 1, 1, NULL, 'Plastik', 16, 1, 0),
-  (28, 'Pentol Besar', 'Harga custom', 2, 0.00, 1, 1, NULL, 'Plastik', 8, 1, 0),
+  (26, 'Tahu Isi', 'Stok bahan pentol', 2, 0.00, 1, 1, NULL, 'Plastik', 25, 1, 0),
+  (27, 'Siomay', 'Stok bahan pentol', 2, 0.00, 1, 1, NULL, 'Plastik', 16, 1, 0),
+  (28, 'Pentol Besar', 'Stok bahan pentol', 2, 0.00, 1, 1, NULL, 'Plastik', 8, 1, 0),
   (30, 'Kelapa Bijian', 'Harga custom', 1, 0.00, 1, 1, NULL, NULL, 1, 0, 0);
 
 INSERT INTO transactions (

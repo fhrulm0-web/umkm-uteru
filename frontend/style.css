@@ -775,6 +775,20 @@ body {
   color: white;
   border-color: var(--primary);
 }
+.size-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 112px;
+}
+.variant-pill-main { line-height: 1.1; }
+.variant-pill-sub {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+.variant-pill.active .variant-pill-sub { color: rgba(255,255,255,0.86); }
 .qty-selector {
   display: flex;
   align-items: center;
