@@ -1,89 +1,167 @@
-# POS UMKM F&B (Full-Stack)
+# POS UMKM F&B
 
-Aplikasi *Point of Sales* (POS) modern *full-stack* yang dirancang khusus untuk memenuhi kebutuhan bisnis UMKM Food & Beverage. Solusi ini mencakup antarmuka kasir yang responsif (Frontend) dan sistem manajemen persediaan/transaksi yang andal (Backend API).
+Aplikasi Point of Sales (POS) full-stack untuk operasional UMKM makanan dan minuman. Frontend dibuat ringan dengan Vanilla JavaScript dan Vite, sedangkan backend memakai Spring Boot, JPA, dan MySQL.
 
-## 📌 Fitur Utama
+## Fitur Utama
 
-Aplikasi ini mendukung operasional harian kedai makanan/minuman dengan fitur lengkap:
-* **Sistem Kasir (POS):** Antarmuka interaktif untuk memproses pesanan, dukungan varian produk, harga kustom, dan penghitungan kembalian.
-* **Manajemen Transaksi:** Rekaman *checkout* dengan berbagai metode pembayaran (Cash, Transfer, QRIS) dan kapabilitas pembatalan transaksi (*void*).
-* **Laporan Penjualan:** Dasbor analitik untuk melihat total pendapatan, jumlah transaksi, rata-rata transaksi, dan menu terlaris berdasarkan rentang waktu.
-* **Sistem Manajemen Stok:** 
-  * Pelacakan *stok harian* (Shift Pagi & Shift Malam).
-  * Pembaruan data *stok master* per produk (dukungan penghitungan satuan kemasan *pack/loose pcs*).
-  * Perhitungan pemakaian otomatis berdasarkan input harian.
+- POS kasir mobile-first untuk checkout cepat.
+- Login profile kasir/owner dan pembuatan profile baru oleh owner.
+- Menu minuman dengan varian gula untuk es kelapa.
+- Es Jeruk dan Es Teh tampil sebagai satu kartu menu dengan pilihan `Cup Besar` dan `Cup Kecil`.
+- Produk harga custom untuk item seperti pentol/sempol/kelapa bijian.
+- Pembayaran Cash, Transfer, dan QRIS.
+- Riwayat transaksi, resi, dan void transaksi.
+- Laporan harian, mingguan, bulanan, termasuk menu paling laris.
+- Manajemen stok pagi/malam dan stok master berbasis plastik + pcs lepas.
+- Asset gambar produk disimpan di `frontend/public/images`.
 
-## 🛠️ Teknologi yang Digunakan
+## Teknologi
 
-Proyek aplikasi terbagi menjadi dua bagian utama: Frontend dan Backend.
+Frontend:
 
-### Frontend
-Aplikasi klien yang ringan dan sangat cepat, dijalankan secara *client-side*.
-* HTML5 & CSS3 (Desain responsif *mobile-first*)
-* Vanilla JavaScript (Pengelolaan *state* fungsional manual)
-* Vite (Lintasan *build* dan lingkungan pengembangan/HMR)
+- HTML, CSS, Vanilla JavaScript
+- Vite
 
-### Backend
-REST API yang tangguh untuk memproses data keamanan bisnis.
-* Java 25
-* Spring Boot 3
-* Spring Web & Spring Data JPA (Hibernate)
-* MySQL Database
+Backend:
 
-## 📂 Struktur Repositori
+- Java 25
+- Spring Boot 3
+- Spring Web
+- Spring Data JPA / Hibernate
+- MySQL atau MariaDB
 
-* `/frontend` - Repositori *source code* aplikasi UI klien.
-* `/backend` - Repositori *source code* untuk REST server Java.
-* `/database` - Skema database mentah, *seeding data*, dan utilitas migrasi.
+## Struktur Repo
 
-## 🚀 Panduan Menjalankan Aplikasi
+- `frontend/` - source UI kasir.
+- `backend/` - REST API Spring Boot.
+- `database/` - schema dan seed SQL MySQL.
+- `start-all.ps1` / `start-all.bat` - helper untuk menjalankan backend dan frontend.
+- `start-backend.ps1` - helper backend saja.
+- `start-frontend.ps1` - helper frontend saja.
 
-### Prasyarat:
-* Node.js & npm (untuk Frontend)
-* Java JDK 25 (untuk Backend)
-* MySQL Server (berjalan pada port 3306)
+## Quick Start
 
-### 1. Menjalankan Backend (Server API)
-Jalankan di terminal/PowerShell pertama:
+Prasyarat:
+
+- Node.js dan npm
+- Java JDK 25
+- MySQL/MariaDB, atau XAMPP MySQL
+
+Cara paling praktis di Windows PowerShell:
+
 ```powershell
-$env:JAVA_HOME="C:\Program Files\Java\jdk-25.0.2"
-$env:MYSQL_HOST="localhost"
-$env:MYSQL_PORT="3306"
-$env:MYSQL_DATABASE="posdb"
-$env:MYSQL_USERNAME="root"
-$env:MYSQL_PASSWORD="<password_mysql_kamu>"
-cd backend
-.\mvnw.cmd spring-boot:run
-```
-*Atau* gunakan file *helper* bawaan: `.\start-backend.ps1 -MysqlPassword "<password>"`
-
-User awal tidak lagi dibuat dengan password bawaan. Untuk database baru, buat user lewat API setelah login dengan akun yang sudah ada, atau aktifkan seed user hanya saat setup lokal:
-```powershell
-$env:POS_SEED_USERS_ENABLED="true"
-$env:POS_SEED_OWNER_PASSWORD="<owner-password-kuat>"
-$env:POS_SEED_STAFF1_PASSWORD="<staff1-password-kuat>"
-$env:POS_SEED_STAFF2_PASSWORD="<staff2-password-kuat>"
+.\start-all.ps1 -MysqlPassword "<password_mysql>" -InstallFrontend
 ```
 
-Konfigurasi keamanan penting:
-* `CORS_ALLOWED_ORIGINS` - origin frontend yang diizinkan, default `http://localhost:5173,http://127.0.0.1:5173`.
-* `POS_AUTH_RATE_LIMIT_MAX` dan `POS_AUTH_RATE_LIMIT_WINDOW` - default 5 percobaan auth per 15 menit.
-* `POS_API_RATE_LIMIT_MAX` dan `POS_API_RATE_LIMIT_WINDOW` - default 300 request API per 15 menit.
-* `POS_MAX_REQUEST_BYTES` - default 65536 byte per payload API.
+Atau dari Command Prompt:
 
-Servis backend akan berjalan di `http://localhost:8080`.
+```bat
+start-all.bat -MysqlPassword "<password_mysql>" -InstallFrontend
+```
 
-### 2. Menjalankan Frontend (Client Web)
-Buka terminal/PowerShell baru tab kedua:
+Script ini akan:
+
+- mencoba menyalakan MySQL XAMPP dari `C:\xampp`,
+- mengecek kredensial MySQL,
+- menjalankan backend di `http://localhost:8080`,
+- menjalankan frontend di `http://localhost:5173`.
+
+Jika MySQL sudah aktif dan tidak perlu dinyalakan oleh script:
+
+```powershell
+.\start-all.ps1 -SkipMysql -MysqlPassword "<password_mysql>"
+```
+
+Jika XAMPP berada di lokasi lain:
+
+```powershell
+.\start-all.ps1 -XamppPath "D:\xampp" -MysqlPassword "<password_mysql>"
+```
+
+## Menjalankan Manual
+
+Backend:
+
+```powershell
+.\start-backend.ps1 -MysqlPassword "<password_mysql>"
+```
+
+Frontend:
+
+```powershell
+.\start-frontend.ps1 -Install
+```
+
+Frontend tersedia di `http://localhost:5173`. Backend tersedia di `http://localhost:8080`.
+
+## Seed User Awal
+
+User awal tidak dibuat dengan password bawaan. Untuk database baru, aktifkan seed user lokal dengan password sendiri:
+
+```powershell
+.\start-all.ps1 `
+  -MysqlPassword "<password_mysql>" `
+  -SeedUsers `
+  -SeedOwnerPassword "<owner-password-kuat>" `
+  -SeedStaff1Password "<staff1-password-kuat>" `
+  -SeedStaff2Password "<staff2-password-kuat>"
+```
+
+Seed user juga bisa dikontrol melalui environment variable:
+
+- `POS_SEED_USERS_ENABLED`
+- `POS_SEED_OWNER_PASSWORD`
+- `POS_SEED_STAFF1_PASSWORD`
+- `POS_SEED_STAFF2_PASSWORD`
+
+## Konfigurasi Environment
+
+Backend membaca konfigurasi berikut:
+
+- `SERVER_PORT` - default `8080`.
+- `SERVER_ADDRESS` - default `0.0.0.0`.
+- `MYSQL_HOST` - host database.
+- `MYSQL_PORT` - port database.
+- `MYSQL_DATABASE` - nama database.
+- `MYSQL_USERNAME` - username database.
+- `MYSQL_PASSWORD` - password database.
+- `CORS_ALLOWED_ORIGINS` - default `http://localhost:5173,http://127.0.0.1:5173`.
+- `POS_AUTH_RATE_LIMIT_MAX` - default `5`.
+- `POS_AUTH_RATE_LIMIT_WINDOW` - default `PT15M`.
+- `POS_API_RATE_LIMIT_MAX` - default `300`.
+- `POS_API_RATE_LIMIT_WINDOW` - default `PT15M`.
+- `POS_MAX_REQUEST_BYTES` - default `65536`.
+
+## Endpoint Penting
+
+- `POST /api/auth/login`
+- `GET /api/auth/profiles`
+- `POST /api/auth/profiles`
+- `GET /api/master/products`
+- `GET /api/master/categories`
+- `POST /api/pos/checkout`
+- `GET /api/pos/transactions`
+- `POST /api/pos/stock/morning`
+- `POST /api/pos/stock/night`
+- `POST /api/pos/stock/master`
+- `GET /api/pos/stock/logs`
+
+## Build
+
+Frontend production build:
+
 ```powershell
 cd frontend
-npm install
-npm run dev
+npm run build
 ```
-Aplikasi aplikasi kasir dapat diakses pada *browser* Anda melalui `http://localhost:5173`.
 
-## 📜 Pembaruan Terkini
+Backend test/build bisa dijalankan dari folder `backend` dengan Maven wrapper:
 
-* **Integrasi Database Backend:** Menghapus sepenuhnya *mock cache* internal untuk *deployment production*, secara penuh mentransisikan penyimpanan state ke tabel MariaDB/MySQL Backend H2 yang sinkron.
-* **Perbaikan Isu Serialization Tanggal (Jackson):** Menambahkan `write-dates-as-timestamps=false` agar pengiriman `LocalDateTime` antar frontend dan backend tervalidasi ISO format yang akurat saat *query* filter.
-* **Penyempurnaan Lazy Initialization JPA:** Menangani transaksi berlapis relasi dengan Hibernate agar data JSON di endpoint API terekstrak sepenuhnya dengan penggunaan `@Transactional` serta pelebaran `@EntityGraph`.
+```powershell
+cd backend
+.\mvnw.cmd test
+```
+
+## Catatan Data
+
+Produk default di-seed oleh `DataInitializer` saat backend berjalan. SQL lengkap untuk setup manual tersedia di `database/mysql/00_full_posdb_mysql.sql`.
