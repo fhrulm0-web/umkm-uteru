@@ -87,6 +87,35 @@ Contoh body:
 }
 ```
 
+### `POST /api/auth/password/change`
+
+Mengubah password profile sendiri. Password saat ini wajib cocok.
+
+Contoh body:
+
+```json
+{
+  "userId": 2,
+  "currentPassword": "<password-lama>",
+  "newPassword": "<password-baru-minimal-8-karakter>"
+}
+```
+
+### `POST /api/auth/password/reset`
+
+Reset password profile lain oleh owner. Password owner wajib cocok.
+
+Contoh body:
+
+```json
+{
+  "ownerId": 1,
+  "ownerPassword": "<password-owner>",
+  "targetUserId": 2,
+  "newPassword": "<password-baru-minimal-8-karakter>"
+}
+```
+
 ## Checkout dan Transaksi
 
 ### `POST /api/pos/checkout`

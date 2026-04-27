@@ -2,6 +2,8 @@ package com.uteru.pos.services;
 
 import com.uteru.pos.models.PosUser;
 import com.uteru.pos.payload.LoginRequest;
+import com.uteru.pos.payload.PasswordChangeRequest;
+import com.uteru.pos.payload.PasswordResetRequest;
 import com.uteru.pos.payload.UserProfileRequest;
 import com.uteru.pos.payload.UserResponse;
 import com.uteru.pos.repositories.PosUserRepository;
@@ -74,6 +76,48 @@ public class AuthService {
         user.setIsActive(true);
 
         return new UserResponse(userRepository.save(user));
+    }
+
+    public UserResponse changePassword(PasswordChangeRequest request) {
+        PosUser user = findActiveUser(request.getUserId());
+
+        if (!PasswordUtil.verifyPassword(request.getCurrentPassword(), user.getPasswordHash())) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Current password is incorrect");
+        }
+
+        user.setPasswordHash(PasswordUtil.hashPassword(request.getNewPassword()));
+        return new UserResponse(userRepository.save(user));
+    }
+
+    public UserResponse resetPassword(PasswordResetRequest request) {
+        PosUser owner = findActiveUser(request.getOwnerId());
+
+        if (!"owner".equals(owner.getRole())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only owner can reset passwords");
+        }
+
+        if (!PasswordUtil.verifyPassword(request.getOwnerPassword(), owner.getPasswordHash())) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Owner password is incorrect");
+        }
+
+        PosUser target = findActiveUser(request.getTargetUserId());
+        target.setPasswordHash(PasswordUtil.hashPassword(request.getNewPassword()));
+        return new UserResponse(userRepository.save(target));
+    }
+
+    private PosUser findActiveUser(Long userId) {
+        if (userId == null || userId <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Valid user id is required");
+        }
+
+        PosUser user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Profile not found"));
+
+        if (!Boolean.TRUE.equals(user.getIsActive())) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Profile not found");
+        }
+
+        return user;
     }
 
     private String normalize(String value) {

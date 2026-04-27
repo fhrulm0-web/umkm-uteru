@@ -125,7 +125,7 @@ Backend membaca konfigurasi berikut:
 - `MYSQL_DATABASE` - nama database.
 - `MYSQL_USERNAME` - username database.
 - `MYSQL_PASSWORD` - password database.
-- `CORS_ALLOWED_ORIGINS` - default `http://localhost:5173,http://127.0.0.1:5173`.
+- `CORS_ALLOWED_ORIGINS` - default `http://localhost:5173,http://127.0.0.1:5173,http://*:5173` so devices on the same network can open the Vite frontend by LAN IP.
 - `POS_AUTH_RATE_LIMIT_MAX` - default `5`.
 - `POS_AUTH_RATE_LIMIT_WINDOW` - default `PT15M`.
 - `POS_API_RATE_LIMIT_MAX` - default `300`.
@@ -137,6 +137,8 @@ Backend membaca konfigurasi berikut:
 - `POST /api/auth/login`
 - `GET /api/auth/profiles`
 - `POST /api/auth/profiles`
+- `POST /api/auth/password/change`
+- `POST /api/auth/password/reset`
 - `GET /api/master/products`
 - `GET /api/master/categories`
 - `POST /api/pos/checkout`

@@ -451,6 +451,101 @@ body {
 .btn-profile-add:active {
   background: #dff0e1;
 }
+.profile-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px 20px 0;
+}
+.profile-actions + .profile-actions {
+  padding-top: 10px;
+}
+.btn-profile-menu {
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-sm);
+}
+.profile-menu-plus {
+  display: inline-flex;
+  width: 21px;
+  height: 21px;
+  align-items: center;
+  justify-content: center;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-size: 1rem;
+  line-height: 1;
+}
+.profile-actions-sheet {
+  padding-bottom: 24px;
+}
+.profile-action-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.profile-action-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--white);
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+  text-align: left;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.profile-action-row:active {
+  transform: scale(0.98);
+  background: var(--bg);
+}
+.profile-action-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: var(--primary-light);
+  color: var(--primary);
+  font-size: 1rem;
+  font-weight: 800;
+}
+.profile-action-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+.profile-action-text strong {
+  font-size: 0.88rem;
+}
+.profile-action-text small {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+.profile-action-arrow {
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+.profile-modal-error {
+  display: none;
+  color: var(--danger);
+  text-align: center;
+  font-size: 0.85rem;
+  margin-top: -8px;
+  margin-bottom: 16px;
+}
 
 /* ===== CHECKOUT MODAL ===== */
 .payment-options {

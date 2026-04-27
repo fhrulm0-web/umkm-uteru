@@ -223,6 +223,36 @@ function Test-BackendReady {
     }
 }
 
+function Get-LanIpv4Addresses {
+    $addresses = @()
+
+    try {
+        route print -4 | ForEach-Object {
+            if ($_ -match '^\s*0\.0\.0\.0\s+0\.0\.0\.0\s+\S+\s+(\d{1,3}(?:\.\d{1,3}){3})\s+\d+\s*$') {
+                $addresses += $matches[1]
+            }
+        }
+    } catch {
+        $addresses = @()
+    }
+
+    if ($addresses.Count -eq 0) {
+        try {
+            ipconfig | Select-String "IPv4 Address" | ForEach-Object {
+                if ($_.Line -match ':\s*(\d{1,3}(?:\.\d{1,3}){3})') {
+                    $addresses += $matches[1]
+                }
+            }
+        } catch {
+            $addresses = @()
+        }
+    }
+
+    $addresses |
+        Where-Object { $_ -notlike "127.*" -and $_ -notlike "169.254.*" } |
+        Select-Object -Unique
+}
+
 Start-XamppMysql
 Resolve-MysqlPassword
 
@@ -273,3 +303,12 @@ if (Test-TcpPort -HostName "localhost" -Port "5173") {
 Write-Host ""
 Write-Host "Frontend: http://localhost:5173" -ForegroundColor Cyan
 Write-Host "Backend : http://localhost:8080" -ForegroundColor Cyan
+
+$lanAddresses = @(Get-LanIpv4Addresses)
+if ($lanAddresses.Count -gt 0) {
+    Write-Host ""
+    Write-Host "Buka dari device lain di jaringan yang sama (pakai http://):" -ForegroundColor Cyan
+    foreach ($address in $lanAddresses) {
+        Write-Host "Frontend LAN: http://$address`:5173" -ForegroundColor Cyan
+    }
+}

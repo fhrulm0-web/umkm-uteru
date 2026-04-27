@@ -58,7 +58,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
             return;
         }
 
-        if (path.startsWith("/api/auth/")) {
+        if (isLoginRequest(request, path)) {
             RateResult authResult = consume("auth:" + clientKey, authMaxAttempts, authWindow, now);
             if (!authResult.allowed()) {
                 writeTooManyRequests(response, "Too many authentication attempts", authMaxAttempts, authResult);
@@ -67,6 +67,10 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private boolean isLoginRequest(HttpServletRequest request, String path) {
+        return "/api/auth/login".equals(path) && "POST".equalsIgnoreCase(request.getMethod());
     }
 
     private RateResult consume(String key, int maxRequests, Duration window, Instant now) {

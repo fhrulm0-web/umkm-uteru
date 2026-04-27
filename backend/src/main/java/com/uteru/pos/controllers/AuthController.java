@@ -1,6 +1,8 @@
 package com.uteru.pos.controllers;
 
 import com.uteru.pos.payload.LoginRequest;
+import com.uteru.pos.payload.PasswordChangeRequest;
+import com.uteru.pos.payload.PasswordResetRequest;
 import com.uteru.pos.payload.UserProfileRequest;
 import com.uteru.pos.payload.UserResponse;
 import com.uteru.pos.services.AuthService;
@@ -33,5 +35,15 @@ public class AuthController {
     @ResponseStatus(HttpStatus.CREATED)
     public UserResponse createProfile(@Valid @RequestBody UserProfileRequest request) {
         return authService.createProfile(request);
+    }
+
+    @PostMapping("/password/change")
+    public UserResponse changePassword(@Valid @RequestBody PasswordChangeRequest request) {
+        return authService.changePassword(request);
+    }
+
+    @PostMapping("/password/reset")
+    public UserResponse resetPassword(@Valid @RequestBody PasswordResetRequest request) {
+        return authService.resetPassword(request);
     }
 }

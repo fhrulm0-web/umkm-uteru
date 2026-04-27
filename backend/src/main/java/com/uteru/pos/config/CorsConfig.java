@@ -10,11 +10,18 @@ import java.util.Arrays;
 @Configuration
 public class CorsConfig implements WebMvcConfigurer {
     private final String[] allowedOrigins;
+    private final String[] allowedOriginPatterns;
 
     public CorsConfig(@Value("${spring.web.cors.allowed-origins}") String allowedOrigins) {
-        this.allowedOrigins = Arrays.stream(allowedOrigins.split(","))
+        var entries = Arrays.stream(allowedOrigins.split(","))
                 .map(String::trim)
                 .filter(origin -> !origin.isBlank())
+                .toArray(String[]::new);
+        this.allowedOrigins = Arrays.stream(entries)
+                .filter(origin -> !origin.contains("*"))
+                .toArray(String[]::new);
+        this.allowedOriginPatterns = Arrays.stream(entries)
+                .filter(origin -> origin.contains("*"))
                 .toArray(String[]::new);
     }
 
@@ -26,10 +33,11 @@ public class CorsConfig implements WebMvcConfigurer {
                 .allowCredentials(false)
                 .maxAge(3600);
 
-        if (Arrays.asList(allowedOrigins).contains("*")) {
-            registration.allowedOriginPatterns("*");
-        } else {
+        if (allowedOrigins.length > 0) {
             registration.allowedOrigins(allowedOrigins);
+        }
+        if (allowedOriginPatterns.length > 0) {
+            registration.allowedOriginPatterns(allowedOriginPatterns);
         }
     }
 }

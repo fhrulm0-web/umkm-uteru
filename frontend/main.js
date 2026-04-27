@@ -121,7 +121,10 @@ async function apiFetch(path, options) {
   var response = await fetch(API_BASE + path, options || {});
   var text = await response.text();
   if (!response.ok) {
-    throw new Error(text || ('HTTP ' + response.status));
+    var err = new Error(text || ('HTTP ' + response.status));
+    err.status = response.status;
+    err.body = text;
+    throw err;
   }
   if (!text) return null;
   var contentType = response.headers.get('content-type') || '';
@@ -392,7 +395,11 @@ async function handleLoginSubmit() {
     completeLogin(user);
   } catch (err) {
     console.error(err);
-    setLoginError('Username/email atau password salah.');
+    if (err && err.status === 429) {
+      setLoginError('Terlalu banyak percobaan. Tunggu sebentar lalu coba lagi.');
+    } else {
+      setLoginError('Username/email atau password salah.');
+    }
   }
 }
 
@@ -944,7 +951,7 @@ function renderReportPage() {
   var topMenu = menuList.slice(0, 5);
 
   var topMenuHtml = '';
-  if (topMenu.length) {
+  if (isOwner() && topMenu.length) {
     topMenuHtml = '<div class="section-title" style="padding:0;margin:20px 0 12px">🏆 Menu Paling Laris</div>';
     for (var tm = 0; tm < topMenu.length; tm++) {
       var m = topMenu[tm];
@@ -1036,13 +1043,26 @@ function showStockDetail(morning, night, used, pcsPerPack, product) {
 
 // ===== PROFILE =====
 function renderProfilePage() {
-  var ownerTools = isOwner()
-    ? '<div style="padding:20px 20px 0"><button class="btn btn-profile-add btn-block" onclick="openCreateProfileModal()"><span>+</span> Tambah Profile</button></div>'
-    : '';
   return '<div class="stock-page page-enter profile-page"><div class="app-header"><div><div class="header-greeting">Profil</div><div class="header-title">' + escapeHtml(getUserDisplayName(currentUser)) + '</div></div></div>' +
     '<div class="receipt-meta" style="margin:0 20px"><div class="receipt-meta-row"><span>Nama</span><span>' + escapeHtml(getUserDisplayName(currentUser)) + '</span></div><div class="receipt-meta-row"><span>Role</span><span class="receipt-badge">' + (isOwner() ? '👑 Owner' : '👤 Staff') + '</span></div></div>' +
-    ownerTools +
+    '<div class="profile-actions"><button class="btn btn-profile-menu btn-block" onclick="openProfileActionsModal()"><span class="profile-menu-plus">+</span> Kelola Profil</button></div>' +
     '<div style="padding:20px"><button class="btn btn-danger btn-block" onclick="logout()">Logout</button></div></div>';
+}
+
+function openProfileActionsModal() {
+  closeModal('profile-actions-modal');
+  var ownerOptions = isOwner()
+    ? '<button class="profile-action-row" onclick="closeModal(\'profile-actions-modal\'); openCreateProfileModal();"><span class="profile-action-icon">+</span><span class="profile-action-text"><strong>Tambah Profile</strong><small>Buat akun staff atau owner baru</small></span><span class="profile-action-arrow">></span></button>' +
+      '<button class="profile-action-row" onclick="closeModal(\'profile-actions-modal\'); openResetPasswordModal();"><span class="profile-action-icon">!</span><span class="profile-action-text"><strong>Reset Password</strong><small>Ganti password profile lain</small></span><span class="profile-action-arrow">></span></button>'
+    : '';
+  var o = document.createElement('div'); o.className = 'modal-overlay'; o.id = 'profile-actions-modal';
+  o.onclick = function (e) { if (e.target === o) closeModal('profile-actions-modal') };
+  o.innerHTML = '<div class="modal-sheet profile-actions-sheet"><div class="handle"></div><h2>Kelola Profil</h2>' +
+    '<div class="profile-action-list">' +
+    '<button class="profile-action-row" onclick="closeModal(\'profile-actions-modal\'); openChangePasswordModal();"><span class="profile-action-icon">*</span><span class="profile-action-text"><strong>Ubah Password</strong><small>Ganti password akun ini</small></span><span class="profile-action-arrow">></span></button>' +
+    ownerOptions +
+    '</div></div>';
+  document.body.appendChild(o);
 }
 
 function openCreateProfileModal() {
@@ -1092,6 +1112,152 @@ async function createProfile() {
   }
 }
 
+function setProfileModalError(id, message) {
+  var error = document.getElementById(id);
+  if (!error) return;
+  error.textContent = message || '';
+  error.style.display = message ? 'block' : 'none';
+}
+
+function validatePasswordPair(newPassword, confirmPassword, errorId) {
+  if (!newPassword || !confirmPassword) {
+    setProfileModalError(errorId, 'Password baru dan konfirmasi wajib diisi.');
+    return false;
+  }
+  if (newPassword.length < 8) {
+    setProfileModalError(errorId, 'Password baru minimal 8 karakter.');
+    return false;
+  }
+  if (newPassword !== confirmPassword) {
+    setProfileModalError(errorId, 'Konfirmasi password tidak sama.');
+    return false;
+  }
+  return true;
+}
+
+function openChangePasswordModal() {
+  closeModal('change-password-modal');
+  var o = document.createElement('div'); o.className = 'modal-overlay'; o.id = 'change-password-modal';
+  o.onclick = function (e) { if (e.target === o) closeModal('change-password-modal') };
+  o.innerHTML = '<div class="modal-sheet"><div class="handle"></div><h2>Ubah Password</h2>' +
+    '<div class="form-row"><label>Password Saat Ini</label><input id="current-password" type="password" autocomplete="current-password" /></div>' +
+    '<div class="form-row"><label>Password Baru</label><input id="new-password" type="password" autocomplete="new-password" /></div>' +
+    '<div class="form-row"><label>Konfirmasi Password Baru</label><input id="confirm-new-password" type="password" autocomplete="new-password" /></div>' +
+    '<div id="change-password-error" class="profile-modal-error"></div>' +
+    '<div class="btn-row"><button class="btn btn-outline" onclick="closeModal(\'change-password-modal\')">Batal</button>' +
+    '<button class="btn btn-primary" onclick="changeOwnPassword()">Simpan</button></div></div>';
+  document.body.appendChild(o);
+}
+
+async function changeOwnPassword() {
+  var currentPassword = document.getElementById('current-password').value;
+  var newPassword = document.getElementById('new-password').value;
+  var confirmPassword = document.getElementById('confirm-new-password').value;
+
+  if (!currentPassword) {
+    setProfileModalError('change-password-error', 'Password saat ini wajib diisi.');
+    return;
+  }
+  if (!validatePasswordPair(newPassword, confirmPassword, 'change-password-error')) return;
+
+  try {
+    await apiFetch('/auth/password/change', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: currentUser.id,
+        currentPassword: currentPassword,
+        newPassword: newPassword
+      })
+    });
+    closeModal('change-password-modal');
+    alert('Password berhasil diubah.');
+  } catch (e) {
+    console.error(e);
+    setProfileModalError('change-password-error', 'Password gagal diubah. Cek password saat ini lalu coba lagi.');
+  }
+}
+
+function openResetPasswordModal() {
+  if (!isOwner()) return;
+  closeModal('reset-password-modal');
+  var o = document.createElement('div'); o.className = 'modal-overlay'; o.id = 'reset-password-modal';
+  o.onclick = function (e) { if (e.target === o) closeModal('reset-password-modal') };
+  o.innerHTML = '<div class="modal-sheet"><div class="handle"></div><h2>Reset Password Profile</h2>' +
+    '<div class="form-row"><label>Profile</label><select id="reset-target-user" disabled><option value="">Memuat profile...</option></select></div>' +
+    '<div class="form-row"><label>Password Owner</label><input id="owner-reset-password" type="password" autocomplete="current-password" /></div>' +
+    '<div class="form-row"><label>Password Baru</label><input id="reset-new-password" type="password" autocomplete="new-password" /></div>' +
+    '<div class="form-row"><label>Konfirmasi Password Baru</label><input id="reset-confirm-password" type="password" autocomplete="new-password" /></div>' +
+    '<div id="reset-password-error" class="profile-modal-error"></div>' +
+    '<div class="btn-row"><button class="btn btn-outline" onclick="closeModal(\'reset-password-modal\')">Batal</button>' +
+    '<button class="btn btn-primary" onclick="resetProfilePassword()">Reset</button></div></div>';
+  document.body.appendChild(o);
+  loadResetPasswordProfiles();
+}
+
+async function loadResetPasswordProfiles() {
+  var select = document.getElementById('reset-target-user');
+  if (!select) return;
+
+  try {
+    var profiles = await apiFetch('/auth/profiles');
+    var options = '';
+    for (var i = 0; i < profiles.length; i++) {
+      if (profiles[i].id === currentUser.id) continue;
+      options += '<option value="' + profiles[i].id + '">' + escapeHtml(getUserDisplayName(profiles[i])) + ' - ' + escapeHtml(profiles[i].role || 'staff') + '</option>';
+    }
+
+    if (!options) {
+      select.innerHTML = '<option value="">Tidak ada profile lain</option>';
+      select.disabled = true;
+      return;
+    }
+
+    select.innerHTML = options;
+    select.disabled = false;
+  } catch (e) {
+    console.error(e);
+    select.innerHTML = '<option value="">Gagal memuat profile</option>';
+    select.disabled = true;
+    setProfileModalError('reset-password-error', 'Profile gagal dimuat dari backend.');
+  }
+}
+
+async function resetProfilePassword() {
+  var targetUserId = document.getElementById('reset-target-user').value;
+  var ownerPassword = document.getElementById('owner-reset-password').value;
+  var newPassword = document.getElementById('reset-new-password').value;
+  var confirmPassword = document.getElementById('reset-confirm-password').value;
+
+  if (!targetUserId) {
+    setProfileModalError('reset-password-error', 'Pilih profile yang akan direset.');
+    return;
+  }
+  if (!ownerPassword) {
+    setProfileModalError('reset-password-error', 'Password owner wajib diisi.');
+    return;
+  }
+  if (!validatePasswordPair(newPassword, confirmPassword, 'reset-password-error')) return;
+
+  try {
+    await apiFetch('/auth/password/reset', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ownerId: currentUser.id,
+        ownerPassword: ownerPassword,
+        targetUserId: Number(targetUserId),
+        newPassword: newPassword
+      })
+    });
+    closeModal('reset-password-modal');
+    alert('Password profile berhasil direset.');
+  } catch (e) {
+    console.error(e);
+    setProfileModalError('reset-password-error', 'Reset password gagal. Cek password owner lalu coba lagi.');
+  }
+}
+
 // ===== BOTTOM NAV =====
 function renderBottomNav() {
   var n = '<nav class="bottom-nav"><button class="nav-item ' + (currentPage === 'pos' ? 'active' : '') + '" onclick="navigate(\'pos\')"><span class="nav-icon">🏠</span>Kasir</button>';
@@ -1135,8 +1301,13 @@ Object.assign(window, {
   setReportTab: setReportTab,
   setReportDate: setReportDate,
   showStockDetail: showStockDetail,
+  openProfileActionsModal: openProfileActionsModal,
   openCreateProfileModal: openCreateProfileModal,
   createProfile: createProfile,
+  openChangePasswordModal: openChangePasswordModal,
+  changeOwnPassword: changeOwnPassword,
+  openResetPasswordModal: openResetPasswordModal,
+  resetProfilePassword: resetProfilePassword,
   logout: logout
 });
 render();
